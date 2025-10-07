@@ -223,7 +223,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, query, orderBy, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const passwordModal = document.getElementById('password-modal');
@@ -260,13 +260,18 @@
             location.reload();
         });
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET", messagingSenderId: "YOUR_MESSAGING_SENDER_ID", appId: "YOUR_APP_ID"
+        // Tu configuración personal de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAoJTLNCdV620Oe4s6_lqqYzVArMI3EkZQ",
+            authDomain: "restaurante-regalo-de-dios.firebaseapp.com",
+            projectId: "restaurante-regalo-de-dios",
+            storageBucket: "restaurante-regalo-de-dios.appspot.com",
+            messagingSenderId: "669926236667",
+            appId: "1:669926236667:web:ff25df87d380f86cd2ab5e",
+            measurementId: "G-1HPXZRCH10"
         };
         
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const collectionPath = `artifacts/${appId}/public/data/orders`;
+        const collectionPath = `orders`; // Ruta simplificada para la colección
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -277,7 +282,7 @@
         
         onAuthStateChanged(auth, user => {
              if (user) {
-                authStatusEl.textContent = `Conectado como: ${user.isAnonymous ? 'Anónimo' : user.uid}`;
+                authStatusEl.textContent = `Conectado como: ${user.isAnonymous ? 'Anónimo' : user.uid.substring(0, 8)}`;
                 authStatusEl.classList.remove('text-red-500');
                 authStatusEl.classList.add('text-green-600');
                 listenToOrders();
@@ -289,11 +294,8 @@
         
         async function authenticate() {
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                // En un entorno de producción como GitHub, siempre iniciaremos sesión anónimamente.
+                await signInAnonymously(auth);
             } catch (error) {
                 console.error("Error de autenticación:", error);
                 authStatusEl.textContent = "Error de conexión.";
@@ -476,5 +478,6 @@
     </script>
 </body>
 </html>
+
 
 
