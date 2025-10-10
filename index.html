@@ -114,6 +114,13 @@
             color: rgba(255, 255, 255, 0.1); /* Más sutil para el fondo oscuro */
             text-shadow: none;
         }
+        
+        .login-watermark {
+            font-size: 10px;
+            color: #e0e0e0;
+            opacity: 0.2;
+            pointer-events: none;
+        }
 
         .status-icon {
             display: inline-block;
@@ -186,6 +193,23 @@
                 <p id="error-message" class="text-red-400 text-sm mt-2 hidden">Contraseña incorrecta.</p>
                 <button type="submit" class="w-full primary-btn py-3 rounded-md text-lg font-semibold shadow-md mt-6">Acceder</button>
             </form>
+            <p class="login-watermark mt-4">CREADO POR FABIAN CARVAJAL</p>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="form-panel p-8 rounded-lg shadow-2xl text-center w-full max-w-sm">
+            <h2 class="text-2xl font-bold mb-6 text-white">Panel de Administrador</h2>
+            <div class="space-y-4">
+                <label for="admin-days-input" class="block text-sm font-medium text-blue-200">Días para ajustar el temporizador:</label>
+                <input type="number" id="admin-days-input" class="w-full p-3 border border-gray-600 rounded-md text-center bg-gray-700 text-white focus:ring-cyan-500 focus:border-cyan-500" placeholder="Ej: 10">
+                <div class="flex space-x-4">
+                    <button id="add-days-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-md font-semibold">Añadir Días</button>
+                    <button id="remove-days-btn" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white py-2 rounded-md font-semibold">Quitar Días</button>
+                </div>
+                <p id="admin-feedback" class="text-green-400 text-sm mt-2 h-4"></p>
+                <button id="admin-logout-btn" class="w-full bg-gray-700 text-cyan-400 hover:bg-gray-600 transition-colors py-2 mt-4 rounded-md font-semibold border border-cyan-400">Volver</button>
+            </div>
         </div>
     </div>
 
@@ -272,7 +296,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, orderBy, serverTimestamp, setLogLevel, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, setDoc, updateDoc, query, where, getDocs, orderBy, serverTimestamp, setLogLevel, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const passwordModal = document.getElementById('password-modal');
         const passwordForm = document.getElementById('password-form');
@@ -284,13 +308,27 @@
         const logoutBtn = document.getElementById('logoutBtn');
         const liveClockEl = document.getElementById('live-clock');
         const countdownTimerEl = document.getElementById('countdown-timer');
+
+        // Admin Panel Elements
+        const adminPanel = document.getElementById('admin-panel');
+        const adminDaysInput = document.getElementById('admin-days-input');
+        const addDaysBtn = document.getElementById('add-days-btn');
+        const removeDaysBtn = document.getElementById('remove-days-btn');
+        const adminLogoutBtn = document.getElementById('admin-logout-btn');
+        const adminFeedback = document.getElementById('admin-feedback');
         
         passwordForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            if (passwordInput.value === '1234') {
+            const enteredPassword = passwordInput.value;
+
+            if (enteredPassword === '1234') {
                 passwordModal.classList.add('hidden');
                 mainContainer.classList.remove('hidden');
                 watermarkEl.classList.remove('hidden');
+            } else if (enteredPassword === '2004') {
+                passwordModal.classList.add('hidden');
+                adminPanel.classList.remove('hidden');
+                passwordInput.value = '';
             } else {
                 errorMessage.classList.remove('hidden');
                 passwordInput.value = '';
@@ -309,6 +347,11 @@
         logoutBtn.addEventListener('click', () => {
             location.reload();
         });
+        
+        adminLogoutBtn.addEventListener('click', () => {
+            adminPanel.classList.add('hidden');
+            passwordModal.classList.remove('hidden');
+        });
 
         // Tu configuración personal de Firebase
         const firebaseConfig = {
@@ -321,7 +364,8 @@
             measurementId: "G-1HPXZRCH10"
         };
         
-        const collectionPath = `orders`; // Ruta simplificada para la colección
+        const orderCollectionPath = `orders`;
+        const configCollectionPath = `config`;
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -404,9 +448,9 @@
             if (!auth.currentUser) { return; }
             const tableNumber = tableNumberSelect.value;
             const items = orderItemsTextarea.value.trim().split('\n').filter(item => item);
-            if (items.length === 0) { return; } // No alert needed, just prevent empty submission
+            if (items.length === 0) { return; } 
             try {
-                await addDoc(collection(db, collectionPath), {
+                await addDoc(collection(db, orderCollectionPath), {
                     tableNumber: parseInt(tableNumber), items: items, status: "En espera", createdAt: serverTimestamp(), closedAt: null
                 });
                 orderForm.reset();
@@ -414,7 +458,7 @@
         });
 
         function listenToOrders() {
-            const q = query(collection(db, collectionPath), orderBy("createdAt", "desc"));
+            const q = query(collection(db, orderCollectionPath), orderBy("createdAt", "desc"));
             
             onSnapshot(q, (snapshot) => {
                 kitchenOrdersContainer.innerHTML = '';
@@ -560,7 +604,7 @@
                 const id = e.target.dataset.id;
                 const newStatus = e.target.dataset.status;
                 try {
-                    await updateDoc(doc(db, collectionPath, id), { status: newStatus });
+                    await updateDoc(doc(db, orderCollectionPath, id), { status: newStatus });
                 } catch (error) { console.error("Error al actualizar el estado: ", error); }
             }
         });
@@ -574,7 +618,7 @@
                 printTicket(tableNumber, items);
 
                 try {
-                    await updateDoc(doc(db, collectionPath, id), { status: "Cerrado", closedAt: serverTimestamp() });
+                    await updateDoc(doc(db, orderCollectionPath, id), { status: "Cerrado", closedAt: serverTimestamp() });
                 } catch (error) { console.error("Error al cerrar el pedido: ", error); }
             }
         });
@@ -586,7 +630,7 @@
             if (target.classList.contains('delete-order-btn')) {
                 const id = target.dataset.id;
                 try {
-                    await deleteDoc(doc(db, collectionPath, id));
+                    await deleteDoc(doc(db, orderCollectionPath, id));
                 } catch (error) {
                     console.error("Error al borrar el pedido: ", error);
                 }
@@ -600,7 +644,7 @@
         deleteAllHistoryBtn.addEventListener('click', async () => {
              // Eliminado el prompt que causa problemas
             try {
-                const q = query(collection(db, collectionPath), where("status", "==", "Cerrado"));
+                const q = query(collection(db, orderCollectionPath), where("status", "==", "Cerrado"));
                 const querySnapshot = await getDocs(q);
                 const deletePromises = [];
                 querySnapshot.forEach((doc) => {
@@ -670,12 +714,23 @@
         }
 
         // --- LÓGICA DEL TEMPORIZADOR ---
-        function startCountdown() {
-            const countdownDate = new Date('2025-10-13T00:00:00').getTime();
+        let countdownInterval;
+        async function startCountdown() {
+            if(countdownInterval) clearInterval(countdownInterval);
 
-            const interval = setInterval(() => {
+            const countdownDocRef = doc(db, configCollectionPath, 'countdown');
+            let countdownDoc = await getDoc(countdownDocRef);
+
+            if (!countdownDoc.exists()) {
+                const defaultDate = new Date('2025-10-13T00:00:00');
+                await setDoc(countdownDocRef, { targetTimestamp: defaultDate.getTime() });
+                countdownDoc = await getDoc(countdownDocRef);
+            }
+
+            const countdownDate = countdownDoc.data().targetTimestamp;
+
+            countdownInterval = setInterval(() => {
                 const now = new Date();
-                // Ajustar la fecha actual a la zona horaria de Costa Rica
                 const nowInCR = new Date(now.toLocaleString('en-US', { timeZone: 'America/Costa_Rica' }));
                 const distance = countdownDate - nowInCR.getTime();
 
@@ -685,13 +740,50 @@
                 const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
                 if (distance < 0) {
-                    clearInterval(interval);
-                    countdownTimerEl.innerHTML = "¡Tiempo finalizado!";
+                    clearInterval(countdownInterval);
+                    countdownTimerEl.innerHTML = "¡Finalizado!";
                 } else {
                     countdownTimerEl.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
                 }
             }, 1000);
         }
+
+        async function updateCountdown(days, operation) {
+            const daysToAdjust = parseInt(days);
+            if (isNaN(daysToAdjust) || daysToAdjust <= 0) {
+                adminFeedback.textContent = "Por favor, ingrese un número válido.";
+                setTimeout(() => adminFeedback.textContent = '', 3000);
+                return;
+            }
+
+            const countdownDocRef = doc(db, configCollectionPath, 'countdown');
+            let countdownDoc = await getDoc(countdownDocRef);
+
+            if (!countdownDoc.exists()) {
+                const defaultDate = new Date('2025-10-13T00:00:00');
+                await setDoc(countdownDocRef, { targetTimestamp: defaultDate.getTime() });
+                countdownDoc = await getDoc(countdownDocRef);
+            }
+
+            const currentTimestamp = countdownDoc.data().targetTimestamp;
+
+            const currentDate = new Date(currentTimestamp);
+            if(operation === 'add') {
+                currentDate.setDate(currentDate.getDate() + daysToAdjust);
+            } else {
+                currentDate.setDate(currentDate.getDate() - daysToAdjust);
+            }
+            
+            await setDoc(countdownDocRef, { targetTimestamp: currentDate.getTime() });
+            adminFeedback.textContent = `¡Fecha actualizada!`;
+            setTimeout(() => adminFeedback.textContent = '', 3000);
+            adminDaysInput.value = '';
+            startCountdown(); // Reinicia el temporizador con la nueva fecha
+        }
+        
+        addDaysBtn.addEventListener('click', () => updateCountdown(adminDaysInput.value, 'add'));
+        removeDaysBtn.addEventListener('click', () => updateCountdown(adminDaysInput.value, 'remove'));
+
 
         // Inicia los relojes
         setInterval(updateClock, 1000);
@@ -703,6 +795,7 @@
     </script>
 </body>
 </html>
+
 
 
 
