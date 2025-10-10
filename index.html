@@ -5,140 +5,172 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Restaurante Regalo de Dios - Sistema de Pedidos</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Roboto Mono', monospace; /* Fuente más tecnológica */
             background-image: url('https://ccodvaipvskwzbjhybxs.supabase.co/storage/v1/object/public/logos/image.png');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            background-color: #3a3530;
-            color: #4a443d;
+            background-color: #1a1a2e; /* Fondo oscuro futurista */
+            color: #e0e0e0; /* Texto claro */
         }
         h1, h2, h3 {
-            font-family: 'Playfair Display', serif;
-            color: #3a3530;
+            font-family: 'Orbitron', sans-serif; /* Fuente futurista para títulos */
+            color: #00bcd4; /* Azul cian brillante para títulos */
         }
-        .header-bg {
-            background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border-bottom: 1px solid rgba(200, 180, 160, 0.5);
+        .header-bg, .form-panel {
+            background-color: rgba(30, 30, 46, 0.7); /* Fondo semi-transparente oscuro */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 188, 212, 0.2); /* Borde sutil cian */
+            box-shadow: 0 0 20px rgba(0, 188, 212, 0.3); /* Sombra brillante */
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px; /* Un poco más ancho para el estilo futurista */
         }
         .order-card {
             transition: all 0.3s ease;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
             border-radius: 0.75rem;
-            background-color: #fffcf7;
-            border-top: 1px solid rgba(255, 255, 255, 0.7);
+            background-color: rgba(40, 40, 60, 0.8); /* Fondo oscuro para tarjetas */
+            border: 1px solid rgba(0, 188, 212, 0.2); /* Borde sutil */
+            box-shadow: 0 0 10px rgba(0, 188, 212, 0.1), 0 0 5px rgba(0, 188, 212, 0.05); /* Brillo sutil */
         }
-        .status-espera { border-left: 6px solid #d97706; }
-        .status-visto { border-left: 6px solid #377a7f; }
-        .status-listo { border-left: 6px solid #5a8b4c; }
-        .status-listo .opacity-layer { opacity: 0.7; }
+        .order-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 15px rgba(0, 188, 212, 0.4), 0 0 10px rgba(0, 188, 212, 0.2); /* Brillo al pasar el ratón */
+        }
+        
+        /* Colores y estilos de estado */
+        .status-espera { border-left: 6px solid #ffeb3b; /* Amarillo brillante */ }
+        .status-visto { border-left: 6px solid #00bcd4; /* Cian vibrante */ }
+        .status-listo { border-left: 6px solid #4caf50; /* Verde esmeralda */ }
+        .status-cerrado { border-left: 6px solid #5a5a5a; /* Gris oscuro para cerrado */ }
 
         .view-button {
-            background-color: #e9e2d9;
-            color: #6d6358;
+            background-color: rgba(0, 188, 212, 0.1); /* Fondo claro con brillo cian */
+            color: #00bcd4; /* Texto cian */
             font-weight: 500;
             transition: all 0.2s ease;
+            border: 1px solid rgba(0, 188, 212, 0.3);
         }
         .view-button.active {
-            background-color: #8c6c52;
+            background-color: #00bcd4; /* Fondo cian sólido */
             color: white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 0 15px rgba(0, 188, 212, 0.6); /* Brillo intenso */
         }
         .view-button:hover:not(.active) {
-            background-color: #dcd3c8;
+            background-color: rgba(0, 188, 212, 0.2);
+            color: #00e5ff; /* Cian más brillante */
         }
 
         .primary-btn {
-            background-color: #8c6c52;
+            background-color: #00bcd4; /* Cian principal */
             color: white;
             transition: all 0.2s ease;
+            box-shadow: 0 0 10px rgba(0, 188, 212, 0.4);
         }
         .primary-btn:hover {
-            background-color: #735944;
+            background-color: #00e5ff; /* Cian más brillante */
+            box-shadow: 0 0 15px rgba(0, 188, 212, 0.6);
         }
         
         #micBtn {
-            background-color: #8c6c52;
+            background-color: #00bcd4;
             transition: all 0.2s ease;
         }
         #micBtn:hover:not(.listening) {
-            background-color: #735944;
+            background-color: #00e5ff;
         }
         #micBtn.listening {
-            background-color: #c84d4d;
+            background-color: #ff5252; /* Rojo neón para grabando */
             animation: pulse 1.5s infinite;
         }
         #micBtn:disabled {
-            background-color: #b0a69c;
+            background-color: #5a5a5a;
             cursor: not-allowed;
             opacity: 0.7;
         }
         
-        .form-panel {
-            background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
+        /* Ajustes para el texto y elementos dentro de los paneles */
+        .form-panel label { color: #bbdefb; } /* Azul claro */
+        .form-panel input, .form-panel select, .form-panel textarea {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 188, 212, 0.3);
+            color: #e0e0e0;
+        }
+        .form-panel input::placeholder, .form-panel textarea::placeholder {
+            color: #a0a0a0;
         }
 
-        .golden-text {
-            color: #daa520;
-            text-shadow: 0 0 5px #ffcf40, 0 0 10px #ffcf40, 0 0 15px #ffcf40;
+        .golden-text { /* Manteniendo el efecto dorado para el título principal */
+            color: #ffcf40;
+            text-shadow: 0 0 8px #ffcf40, 0 0 15px #ffcf40, 0 0 25px #ffcf40, 0 0 35px #ffcf40;
             animation: glow-flicker 4s infinite alternate;
         }
-
+        
         .watermark {
-            position: fixed;
-            bottom: 15px;
-            right: 15px;
-            font-size: 12px;
-            color: #ffffff;
-            opacity: 0.25;
-            pointer-events: none;
-            z-index: 9999;
-            font-family: 'Inter', sans-serif;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            color: rgba(255, 255, 255, 0.1); /* Más sutil para el fondo oscuro */
+            text-shadow: none;
         }
 
-        /* Shake animation for wrong password */
-        .shake {
-            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        .status-icon {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
         }
-
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-1px, 0, 0); }
-            20%, 80% { transform: translate3d(2px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-            40%, 60% { transform: translate3d(4px, 0, 0); }
-        }
-
+        .status-icon-espera { background-color: #ffeb3b; }
+        .status-icon-visto { background-color: #00bcd4; }
+        .status-icon-listo { background-color: #4caf50; }
+        .status-icon-cerrado { background-color: #5a5a5a; }
+        
+        /* Animaciones */
         @keyframes glow-flicker {
             0%, 100% {
-                text-shadow: 0 0 5px #ffcf40, 0 0 10px #ffcf40, 0 0 15px #ffcf40;
+                text-shadow: 0 0 8px #ffcf40, 0 0 15px #ffcf40, 0 0 25px #ffcf40, 0 0 35px #ffcf40;
                 opacity: 1;
             }
             50% {
-                text-shadow: 0 0 8px #ffd700, 0 0 15px #ffd700, 0 0 25px #ffd700;
-                opacity: 0.95;
+                text-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700, 0 0 30px #ffd700, 0 0 40px #ffd700;
+                opacity: 0.98;
             }
         }
-
         @keyframes pulse {
             0%, 100% {
                 transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(200, 77, 77, 0.7);
+                box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7);
             }
             70% {
                 transform: scale(1.05);
-                box-shadow: 0 0 0 10px rgba(200, 77, 77, 0);
+                box-shadow: 0 0 0 10px rgba(255, 82, 82, 0);
             }
+        }
+
+        /* Estilos para la impresión del tiquete */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-area, #print-area * {
+                visibility: visible;
+            }
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                font-family: 'Courier New', monospace;
+                font-size: 9pt;
+                color: #000;
+            }
+            #print-area h1 { font-size: 12pt; font-weight: bold; text-align: center; }
+            #print-area p { margin: 2px 0; }
+            #print-area ul { list-style-type: none; padding: 0; margin: 5px 0; border-top: 1px dashed #000; border-bottom: 1px dashed #000; }
+            #print-area li { margin: 2px 0; }
         }
     </style>
 </head>
@@ -147,11 +179,11 @@
     <div id="password-modal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
         <div id="password-box" class="form-panel p-8 rounded-lg shadow-2xl text-center w-full max-w-sm">
             <img src="https://ccodvaipvskwzbjhybxs.supabase.co/storage/v1/object/public/logos/imagen_2025-10-07_002046501.png" alt="Logo Regalo de Dios" class="mx-auto h-24 w-24 object-contain rounded-full shadow-md mb-6">
-            <h2 class="text-2xl font-bold mb-4">Ingresar Contraseña</h2>
-            <p class="text-gray-600 mb-6">Por favor, introduce la contraseña para acceder al sistema.</p>
+            <h2 class="text-2xl font-bold mb-4 text-white">Ingresar Contraseña</h2>
+            <p class="text-gray-300 mb-6">Por favor, introduce la contraseña para acceder al sistema.</p>
             <form id="password-form">
-                <input type="password" id="password-input" class="w-full p-3 border border-gray-300 rounded-md text-center" placeholder="********">
-                <p id="error-message" class="text-red-500 text-sm mt-2 hidden">Contraseña incorrecta.</p>
+                <input type="password" id="password-input" class="w-full p-3 border border-gray-600 rounded-md text-center bg-gray-700 text-white focus:ring-cyan-500 focus:border-cyan-500" placeholder="********">
+                <p id="error-message" class="text-red-400 text-sm mt-2 hidden">Contraseña incorrecta.</p>
                 <button type="submit" class="w-full primary-btn py-3 rounded-md text-lg font-semibold shadow-md mt-6">Acceder</button>
             </form>
         </div>
@@ -159,7 +191,12 @@
 
     <div class="container mx-auto p-4 hidden">
         <header class="header-bg rounded-lg shadow-lg p-6 mb-8 text-center relative">
-             <button id="logoutBtn" class="absolute top-4 right-4 bg-amber-200 text-amber-800 hover:bg-amber-300 transition-colors px-4 py-1.5 rounded-full text-sm font-semibold">Cerrar Sesión</button>
+            <div class="absolute top-4 left-4 text-center">
+                <p class="text-xs font-semibold text-cyan-400">Tiempo restante:</p>
+                <p id="countdown-timer" class="text-lg font-bold text-yellow-400"></p>
+            </div>
+             <button id="logoutBtn" class="absolute top-4 right-4 bg-gray-700 text-cyan-400 hover:bg-gray-600 transition-colors px-4 py-1.5 rounded-full text-sm font-semibold border border-cyan-400">Cerrar Sesión</button>
+             <p id="live-clock" class="absolute top-12 right-4 text-xs font-semibold text-cyan-400"></p>
             <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
                 <img src="https://ccodvaipvskwzbjhybxs.supabase.co/storage/v1/object/public/logos/imagen_2025-10-07_002046501.png" alt="Logo Regalo de Dios" class="h-16 w-16 object-contain rounded-full shadow-md">
                 <h1 class="text-4xl font-bold leading-tight golden-text">Restaurante Regalo de Dios</h1>
@@ -168,31 +205,32 @@
             <div class="flex justify-center items-center mt-6 space-x-3">
                 <button id="showCashierViewBtn" class="view-button px-6 py-2 rounded-full font-semibold">Vista Caja</button>
                 <button id="showKitchenViewBtn" class="view-button px-6 py-2 rounded-full font-semibold">Vista Cocina</button>
+                <button id="showHistoryViewBtn" class="view-button px-6 py-2 rounded-full font-semibold">Historial</button>
             </div>
-             <div id="auth-status" class="text-center mt-4 text-sm text-gray-500">Conectando...</div>
+             <div id="auth-status" class="text-center mt-4 text-sm text-gray-400">Conectando...</div>
         </header>
 
         <div id="cashierView">
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
                 <div class="lg:col-span-2 lg:sticky lg:top-8">
                     <div class="form-panel p-8 rounded-lg shadow-lg">
-                        <h2 class="text-3xl font-bold mb-6 text-center text-gray-900">Crear Nuevo Pedido</h2>
+                        <h2 class="text-3xl font-bold mb-6 text-center text-cyan-400">Crear Nuevo Pedido</h2>
                         <form id="orderForm" class="space-y-6">
                             <div>
-                                <label for="tableNumber" class="block text-sm font-medium text-gray-700 mb-1">Número de Mesa</label>
-                                <select id="tableNumber" required class="mt-1 block w-full bg-gray-50 border border-gray-300 text-gray-900 text-base rounded-md focus:ring-amber-500 focus:border-amber-500 p-3">
+                                <label for="tableNumber" class="block text-sm font-medium text-blue-200 mb-1">Número de Mesa</label>
+                                <select id="tableNumber" required class="mt-1 block w-full bg-gray-700 border border-gray-600 text-white text-base rounded-md focus:ring-cyan-500 focus:border-cyan-500 p-3">
                                 </select>
                             </div>
                             <div>
                                 <div class="flex justify-between items-center mb-1">
-                                     <label for="orderItems" class="block text-sm font-medium text-gray-700">Artículos del Pedido</label>
-                                     <button type="button" id="micBtn" class="p-3 rounded-full primary-btn hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">
+                                     <label for="orderItems" class="block text-sm font-medium text-blue-200">Artículos del Pedido</label>
+                                     <button type="button" id="micBtn" class="p-3 rounded-full primary-btn focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
                                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
                                              <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm5 10.126V15a1 1 0 11-2 0v-.874A6.002 6.002 0 014 9V7a1 1 0 012 0v2a4 4 0 008 0V7a1 1 0 112 0v2a6.002 6.002 0 01-4 5.126z" clip-rule="evenodd" />
                                          </svg>
                                      </button>
                                 </div>
-                                <textarea id="orderItems" rows="5" required class="mt-1 block p-3 w-full text-base text-gray-900 bg-gray-50 rounded-md border border-gray-300 focus:ring-amber-500 focus:border-amber-500" placeholder="Ej:\n1 Hamburguesa con queso\n1 Papas fritas\n1 Refresco grande"></textarea>
+                                <textarea id="orderItems" rows="5" required class="mt-1 block p-3 w-full text-base text-white bg-gray-700 rounded-md border border-gray-600 focus:ring-cyan-500 focus:border-cyan-500" placeholder="Ej:\n1 Hamburguesa con queso\n1 Papas fritas\n1 Refresco grande"></textarea>
                             </div>
                             <button type="submit" class="w-full primary-btn py-3 rounded-md text-lg font-semibold shadow-md">Enviar Pedido a Cocina</button>
                         </form>
@@ -201,9 +239,9 @@
 
                 <div class="lg:col-span-3">
                      <div class="form-panel p-8 rounded-lg shadow-lg">
-                        <h3 class="text-3xl font-bold mb-6 text-center text-gray-900">Estado de Mesas Activas</h3>
+                        <h3 class="text-3xl font-bold mb-6 text-center text-cyan-400">Estado de Mesas Activas</h3>
                         <div id="cashierOrders" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <p class="text-center col-span-full text-gray-500">No hay pedidos activos.</p>
+                            <p class="text-center col-span-full text-gray-400">No hay pedidos activos.</p>
                         </div>
                     </div>
                 </div>
@@ -211,20 +249,30 @@
         </div>
 
         <div id="kitchenView" class="hidden">
-             <h2 class="text-3xl font-bold mb-6 text-center text-gray-900">Pedidos Activos</h2>
+             <h2 class="text-3xl font-bold mb-6 text-center text-cyan-400">Pedidos Activos</h2>
             <div id="kitchenOrders" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <p class="text-center col-span-full text-gray-500">Esperando pedidos...</p>
+                <p class="text-center col-span-full text-gray-400">Esperando pedidos...</p>
             </div>
         </div>
 
+        <div id="historyView" class="hidden">
+             <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-center text-cyan-400">Historial de Pedidos Cerrados</h2>
+                <button id="deleteAllHistoryBtn" class="bg-red-800 text-white px-4 py-2 rounded-md hover:bg-red-900 text-sm font-semibold transition-colors">Borrar todo el historial</button>
+             </div>
+            <div id="historyOrders" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <p class="text-center col-span-full text-gray-400">No hay pedidos en el historial.</p>
+            </div>
+        </div>
     </div>
 
+    <div id="print-area"></div>
     <div class="watermark hidden">Creado por Fabián Carvajal</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, query, orderBy, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, query, where, getDocs, orderBy, serverTimestamp, setLogLevel, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const passwordModal = document.getElementById('password-modal');
         const passwordForm = document.getElementById('password-form');
@@ -234,6 +282,8 @@
         const mainContainer = document.querySelector('.container');
         const watermarkEl = document.querySelector('.watermark');
         const logoutBtn = document.getElementById('logoutBtn');
+        const liveClockEl = document.getElementById('live-clock');
+        const countdownTimerEl = document.getElementById('countdown-timer');
         
         passwordForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -305,14 +355,18 @@
         
         const cashierView = document.getElementById('cashierView');
         const kitchenView = document.getElementById('kitchenView');
+        const historyView = document.getElementById('historyView');
         const showCashierViewBtn = document.getElementById('showCashierViewBtn');
         const showKitchenViewBtn = document.getElementById('showKitchenViewBtn');
+        const showHistoryViewBtn = document.getElementById('showHistoryViewBtn');
         const orderForm = document.getElementById('orderForm');
         const tableNumberSelect = document.getElementById('tableNumber');
         const orderItemsTextarea = document.getElementById('orderItems');
         const kitchenOrdersContainer = document.getElementById('kitchenOrders');
         const cashierOrdersContainer = document.getElementById('cashierOrders');
+        const historyOrdersContainer = document.getElementById('historyOrders');
         const micBtn = document.getElementById('micBtn');
+        const deleteAllHistoryBtn = document.getElementById('deleteAllHistoryBtn');
         
         for (let i = 1; i <= 20; i++) {
             const option = document.createElement('option');
@@ -322,31 +376,38 @@
         }
 
         function switchView(view) {
+            cashierView.classList.add('hidden');
+            kitchenView.classList.add('hidden');
+            historyView.classList.add('hidden');
+            showCashierViewBtn.classList.remove('active');
+            showKitchenViewBtn.classList.remove('active');
+            showHistoryViewBtn.classList.remove('active');
+
             if(view === 'cashier') {
                 cashierView.classList.remove('hidden');
-                kitchenView.classList.add('hidden');
                 showCashierViewBtn.classList.add('active');
-                showKitchenViewBtn.classList.remove('active');
-            } else {
-                cashierView.classList.add('hidden');
+            } else if (view === 'kitchen') {
                 kitchenView.classList.remove('hidden');
-                showCashierViewBtn.classList.remove('active');
                 showKitchenViewBtn.classList.add('active');
+            } else if (view === 'history') {
+                historyView.classList.remove('hidden');
+                showHistoryViewBtn.classList.add('active');
             }
         }
 
         showCashierViewBtn.addEventListener('click', () => switchView('cashier'));
         showKitchenViewBtn.addEventListener('click', () => switchView('kitchen'));
+        showHistoryViewBtn.addEventListener('click', () => switchView('history'));
         
         orderForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!auth.currentUser) { return; }
             const tableNumber = tableNumberSelect.value;
             const items = orderItemsTextarea.value.trim().split('\n').filter(item => item);
-            if (items.length === 0) { alert('Por favor, ingresa al menos un artículo para el pedido.'); return; }
+            if (items.length === 0) { return; } // No alert needed, just prevent empty submission
             try {
                 await addDoc(collection(db, collectionPath), {
-                    tableNumber: parseInt(tableNumber), items: items, status: "En espera", createdAt: serverTimestamp()
+                    tableNumber: parseInt(tableNumber), items: items, status: "En espera", createdAt: serverTimestamp(), closedAt: null
                 });
                 orderForm.reset();
             } catch (error) { console.error("Error al añadir el pedido: ", error); }
@@ -358,23 +419,43 @@
             onSnapshot(q, (snapshot) => {
                 kitchenOrdersContainer.innerHTML = '';
                 cashierOrdersContainer.innerHTML = '';
+                historyOrdersContainer.innerHTML = '';
 
-                const activeOrders = snapshot.docs.filter(doc => doc.data().status !== 'Cerrado');
+                const activeOrders = [];
+                const closedOrders = [];
+
+                snapshot.docs.forEach(doc => {
+                    if (doc.data().status === 'Cerrado') {
+                        closedOrders.push(doc);
+                    } else {
+                        activeOrders.push(doc);
+                    }
+                });
 
                 if (activeOrders.length === 0) {
-                    const noOrdersMsg = '<p class="text-center col-span-full text-gray-500 p-4">No hay pedidos activos.</p>';
+                    const noOrdersMsg = '<p class="text-center col-span-full text-gray-400 p-4">No hay pedidos activos.</p>';
                     kitchenOrdersContainer.innerHTML = noOrdersMsg;
                     cashierOrdersContainer.innerHTML = noOrdersMsg;
-                    return;
+                } else {
+                    activeOrders.forEach(doc => {
+                        const order = doc.data();
+                        const orderId = doc.id;
+                        kitchenOrdersContainer.appendChild(createOrderCard(order, orderId));
+                        cashierOrdersContainer.appendChild(createCashierOrderCard(order, orderId));
+                    });
                 }
-                
-                activeOrders.forEach(doc => {
-                    const order = doc.data();
-                    const orderId = doc.id;
-                    
-                    kitchenOrdersContainer.appendChild(createOrderCard(order, orderId));
-                    cashierOrdersContainer.appendChild(createCashierOrderCard(order, orderId));
-                });
+
+                if (closedOrders.length === 0) {
+                     historyOrdersContainer.innerHTML = '<p class="text-center col-span-full text-gray-400 p-4">No hay pedidos en el historial.</p>';
+                     deleteAllHistoryBtn.classList.add('hidden');
+                } else {
+                    deleteAllHistoryBtn.classList.remove('hidden');
+                    closedOrders.sort((a, b) => b.data().closedAt - a.data().closedAt).forEach(doc => {
+                         const order = doc.data();
+                         const orderId = doc.id;
+                         historyOrdersContainer.appendChild(createHistoryOrderCard(order, orderId));
+                    });
+                }
             });
         }
         
@@ -382,46 +463,98 @@
             const card = document.createElement('div');
             card.className = `order-card flex flex-col justify-between status-${order.status.toLowerCase().replace(' ', '')}`;
             
-            const statusColorClasses = { "En espera": "bg-amber-100 text-amber-800", "Visto": "bg-cyan-100 text-cyan-900", "Listo": "bg-emerald-100 text-emerald-900" };
-            const itemsHtml = order.items.map(item => `<li class="text-gray-700">${item}</li>`).join('');
+            const statusColorClasses = { "En espera": "bg-yellow-400 text-yellow-900", "Visto": "bg-cyan-500 text-cyan-900", "Listo": "bg-emerald-500 text-emerald-900" };
+            const statusIconClasses = { "En espera": "status-icon-espera", "Visto": "status-icon-visto", "Listo": "status-icon-listo" };
+            const itemsHtml = order.items.map(item => `<li class="text-gray-200">${item}</li>`).join('');
 
             card.innerHTML = `
                 <div class="relative p-4 ${order.status === 'Listo' ? 'opacity-layer' : ''}">
                     <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-xl font-bold">Mesa ${order.tableNumber}</h3>
-                        <span class="text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full ${statusColorClasses[order.status]}">${order.status}</span>
+                        <h3 class="text-xl font-bold text-white">Mesa ${order.tableNumber}</h3>
+                        <span class="text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full ${statusColorClasses[order.status]}">
+                            <span class="status-icon ${statusIconClasses[order.status]}"></span>${order.status}
+                        </span>
                     </div>
                     <ul class="list-disc list-inside space-y-1 mb-4">${itemsHtml}</ul>
-                    <p class="text-xs text-gray-500">${order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleTimeString() : 'Recibiendo...'}</p>
+                    <p class="text-xs text-gray-400">${order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleTimeString('es-CR') : 'Recibiendo...'}</p>
                 </div>
                 ${order.status !== 'Listo' ? `
                 <div class="flex space-x-2 p-4 pt-0">
                     ${order.status === 'En espera' ? `<button data-id="${id}" data-status="Visto" class="update-status-btn flex-1 bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded-md text-sm font-semibold transition-colors">Marcar Visto</button>` : ''}
                     ${order.status === 'Visto' ? `<button data-id="${id}" data-status="Listo" class="update-status-btn flex-1 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold transition-colors">Marcar Listo</button>` : ''}
-                </div>` : '<div class="p-4 text-center text-sm font-semibold text-green-700">Pedido completado</div>'}`;
+                </div>` : '<div class="p-4 text-center text-sm font-semibold text-emerald-500">Pedido completado</div>'}`;
             return card;
         }
 
         function createCashierOrderCard(order, id) {
             const card = document.createElement('div');
             card.className = `order-card flex flex-col justify-between status-${order.status.toLowerCase().replace(' ', '')}`;
-            const statusColorClasses = { "En espera": "bg-amber-100 text-amber-800", "Visto": "bg-cyan-100 text-cyan-900", "Listo": "bg-emerald-100 text-emerald-900" };
-            const itemsHtml = order.items.map(item => `<li class="text-sm text-gray-600">${item}</li>`).join('');
+            const statusColorClasses = { "En espera": "bg-yellow-400 text-yellow-900", "Visto": "bg-cyan-500 text-cyan-900", "Listo": "bg-emerald-500 text-emerald-900" };
+            const statusIconClasses = { "En espera": "status-icon-espera", "Visto": "status-icon-visto", "Listo": "status-icon-listo" };
+            const itemsHtml = order.items.map(item => `<li class="text-sm text-gray-300">${item}</li>`).join('');
+            const itemsJson = JSON.stringify(order.items);
 
             card.innerHTML = `
                 <div class="p-4">
                     <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-lg font-bold">Mesa ${order.tableNumber}</h3>
-                        <span class="text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full ${statusColorClasses[order.status]}">${order.status}</span>
+                        <h3 class="text-lg font-bold text-white">Mesa ${order.tableNumber}</h3>
+                        <span class="text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full ${statusColorClasses[order.status]}">
+                            <span class="status-icon ${statusIconClasses[order.status]}"></span>${order.status}
+                        </span>
                     </div>
                     <ul class="list-disc list-inside space-y-1 mb-4 pl-2">${itemsHtml}</ul>
                 </div>
                 <div class="mt-auto p-4 pt-0">
-                     ${order.status === 'Listo' ? `<button data-id="${id}" data-status="Cerrado" class="close-order-btn w-full bg-emerald-600 text-white px-3 py-1.5 rounded-md hover:bg-emerald-700 text-sm font-semibold transition-colors">Cobrar y Cerrar</button>` : `<div class="text-center text-sm font-medium text-gray-500 pt-2">Pedido en ${order.status === 'En espera' ? 'espera' : 'preparación'}...</div>`}
+                     ${order.status === 'Listo' ? `<button data-id="${id}" data-table="${order.tableNumber}" data-items='${itemsJson}' class="close-order-btn w-full bg-emerald-600 text-white px-3 py-1.5 rounded-md hover:bg-emerald-700 text-sm font-semibold transition-colors">Cobrar, Imprimir y Cerrar</button>` : `<div class="text-center text-sm font-medium text-gray-400 pt-2">Pedido en ${order.status === 'En espera' ? 'espera' : 'preparación'}...</div>`}
+                </div>`;
+            return card;
+        }
+
+        function createHistoryOrderCard(order, id) {
+            const card = document.createElement('div');
+            card.className = `order-card flex flex-col justify-between status-cerrado`;
+            const itemsHtml = order.items.map(item => `<li class="text-sm text-gray-300">${item}</li>`).join('');
+            const closedTime = order.closedAt ? new Date(order.closedAt.seconds * 1000).toLocaleString('es-CR') : 'No disponible';
+            const itemsJson = JSON.stringify(order.items);
+
+            card.innerHTML = `
+                <div class="p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-lg font-bold text-white">Mesa ${order.tableNumber}</h3>
+                        <span class="text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full bg-gray-600 text-gray-200">
+                            <span class="status-icon status-icon-cerrado"></span>Cerrado
+                        </span>
+                    </div>
+                    <ul class="list-disc list-inside space-y-1 mb-4 pl-2">${itemsHtml}</ul>
+                    <p class="text-xs text-gray-400">Cerrado el: ${closedTime}</p>
+                </div>
+                <div class="mt-auto p-4 pt-0 flex space-x-2">
+                    <button data-table="${order.tableNumber}" data-items='${itemsJson}' class="reprint-btn flex-1 bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded-md text-sm font-semibold transition-colors">Re-imprimir</button>
+                    <button data-id="${id}" class="delete-order-btn flex-1 bg-red-800 text-white px-3 py-1.5 rounded-md hover:bg-red-900 text-sm font-semibold transition-colors">Borrar</button>
                 </div>`;
             return card;
         }
         
+        function printTicket(tableNumber, items) {
+            const printArea = document.getElementById('print-area');
+            const now = new Date();
+            const options = { timeZone: 'America/Costa_Rica', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            const formattedDate = now.toLocaleString('es-CR', options);
+            const itemsHtml = items.map(item => `<li>${item}</li>`).join('');
+
+            const ticketContent = `
+                <h1>Restaurante Regalo de Dios</h1>
+                <p>Fecha: ${formattedDate}</p>
+                <p>Mesa: ${tableNumber}</p>
+                <ul>${itemsHtml}</ul>
+                <p style="text-align: center;">¡Gracias por su visita!</p>
+            `;
+
+            printArea.innerHTML = ticketContent;
+            window.print();
+            printArea.innerHTML = ''; // Limpia el área después de imprimir
+        }
+
         kitchenOrdersContainer.addEventListener('click', async (e) => {
             if (e.target.classList.contains('update-status-btn')) {
                 const id = e.target.dataset.id;
@@ -435,9 +568,47 @@
         cashierOrdersContainer.addEventListener('click', async (e) => {
             if (e.target.classList.contains('close-order-btn')) {
                 const id = e.target.dataset.id;
+                const tableNumber = e.target.dataset.table;
+                const items = JSON.parse(e.target.dataset.items);
+
+                printTicket(tableNumber, items);
+
                 try {
-                    await updateDoc(doc(db, collectionPath, id), { status: "Cerrado" });
+                    await updateDoc(doc(db, collectionPath, id), { status: "Cerrado", closedAt: serverTimestamp() });
                 } catch (error) { console.error("Error al cerrar el pedido: ", error); }
+            }
+        });
+
+        historyOrdersContainer.addEventListener('click', async (e) => {
+            const target = e.target.closest('button');
+            if (!target) return;
+
+            if (target.classList.contains('delete-order-btn')) {
+                const id = target.dataset.id;
+                try {
+                    await deleteDoc(doc(db, collectionPath, id));
+                } catch (error) {
+                    console.error("Error al borrar el pedido: ", error);
+                }
+            } else if (target.classList.contains('reprint-btn')) {
+                const tableNumber = target.dataset.table;
+                const items = JSON.parse(target.dataset.items);
+                printTicket(tableNumber, items);
+            }
+        });
+
+        deleteAllHistoryBtn.addEventListener('click', async () => {
+             // Eliminado el prompt que causa problemas
+            try {
+                const q = query(collection(db, collectionPath), where("status", "==", "Cerrado"));
+                const querySnapshot = await getDocs(q);
+                const deletePromises = [];
+                querySnapshot.forEach((doc) => {
+                    deletePromises.push(deleteDoc(doc.ref));
+                });
+                await Promise.all(deletePromises);
+            } catch(error) {
+                console.error("Error al borrar todo el historial: ", error);
             }
         });
 
@@ -445,7 +616,7 @@
         let recognition;
         let isListening = false;
         if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
+            recognition = new SpeechRecognition(); // Corregido: removido el guion
             recognition.continuous = true; recognition.lang = 'es-CR'; recognition.interimResults = false;
             
             micBtn.addEventListener('click', () => { 
@@ -458,7 +629,7 @@
                 console.error('Error en reconocimiento de voz:', event.error); 
                 isListening = false; 
                 micBtn.classList.remove('listening'); 
-                alert('Hubo un error con el reconocimiento de voz. Asegúrate de haber dado permisos y que tu micrófono funcione.');
+                // No alert needed for voice errors
             };
             recognition.onresult = (event) => {
                 let transcript = '';
@@ -473,11 +644,54 @@
             micBtn.title = "El reconocimiento de voz no está disponible en este navegador. Recomendamos Google Chrome o Microsoft Edge.";
         }
 
+        // --- LÓGICA DEL RELOJ EN VIVO ---
+        function updateClock() {
+            const now = new Date();
+            const options = {
+                timeZone: 'America/Costa_Rica', // Especifica la zona horaria de Costa Rica
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            };
+            liveClockEl.textContent = now.toLocaleTimeString('es-CR', options);
+        }
+
+        // --- LÓGICA DEL TEMPORIZADOR ---
+        function startCountdown() {
+            const countdownDate = new Date('2025-10-13T00:00:00').getTime();
+
+            const interval = setInterval(() => {
+                const now = new Date();
+                // Ajustar la fecha actual a la zona horaria de Costa Rica
+                const nowInCR = new Date(now.toLocaleString('en-US', { timeZone: 'America/Costa_Rica' }));
+                const distance = countdownDate - nowInCR.getTime();
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                if (distance < 0) {
+                    clearInterval(interval);
+                    countdownTimerEl.innerHTML = "¡Tiempo finalizado!";
+                } else {
+                    countdownTimerEl.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+                }
+            }, 1000);
+        }
+
+        // Inicia los relojes
+        setInterval(updateClock, 1000);
+        updateClock();
+        startCountdown();
+
         switchView('cashier');
         authenticate();
     </script>
 </body>
 </html>
+
 
 
 
