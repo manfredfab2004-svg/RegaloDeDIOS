@@ -615,21 +615,33 @@
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
         let isListening = false;
+        
+        const micIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm5 10.126V15a1 1 0 11-2 0v-.874A6.002 6.002 0 014 9V7a1 1 0 012 0v2a4 4 0 008 0V7a1 1 0 112 0v2a6.002 6.002 0 01-4 5.126z" clip-rule="evenodd" /></svg>`;
+        const stopIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>`;
+
         if (SpeechRecognition) {
-            recognition = new SpeechRecognition(); // Corregido: removido el guion
+            recognition = new SpeechRecognition();
             recognition.continuous = true; recognition.lang = 'es-CR'; recognition.interimResults = false;
             
             micBtn.addEventListener('click', () => { 
                 if (isListening) { recognition.stop(); } else { recognition.start(); }
             });
 
-            recognition.onstart = () => { isListening = true; micBtn.classList.add('listening'); };
-            recognition.onend = () => { isListening = false; micBtn.classList.remove('listening'); };
+            recognition.onstart = () => { 
+                isListening = true; 
+                micBtn.classList.add('listening'); 
+                micBtn.innerHTML = stopIcon;
+            };
+            recognition.onend = () => { 
+                isListening = false; 
+                micBtn.classList.remove('listening');
+                micBtn.innerHTML = micIcon;
+            };
             recognition.onerror = (event) => { 
                 console.error('Error en reconocimiento de voz:', event.error); 
                 isListening = false; 
                 micBtn.classList.remove('listening'); 
-                // No alert needed for voice errors
+                micBtn.innerHTML = micIcon;
             };
             recognition.onresult = (event) => {
                 let transcript = '';
@@ -691,7 +703,6 @@
     </script>
 </body>
 </html>
-
 
 
 
