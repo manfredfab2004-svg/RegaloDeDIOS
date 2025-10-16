@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -129,7 +128,7 @@
 
     <!-- Panel de Administrador -->
     <div id="admin-panel" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
-        <div class="modal-panel p-8 rounded-lg w-full max-w-sm">
+        <div class="modal-panel p-8 rounded-lg w-full max-w-md">
             <h2 class="text-2xl font-bold mb-6 text-white text-center">Panel de Administrador</h2>
             <div class="space-y-4">
                 <label for="admin-days-input" class="block text-sm font-medium text-blue-200">Días para ajustar el temporizador:</label>
@@ -139,8 +138,35 @@
                     <button id="remove-days-btn" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white py-2 rounded-md font-semibold">Quitar Días</button>
                 </div>
                 <p id="admin-feedback" class="text-green-400 text-sm mt-2 h-4 text-center"></p>
-                <button id="admin-logout-btn" class="w-full bg-gray-700 text-cyan-400 hover:bg-gray-600 py-2 mt-4 rounded-md font-semibold border border-cyan-400">Volver</button>
             </div>
+
+            <div class="mt-8 border-t border-cyan-700 pt-6">
+                <h3 class="text-xl font-bold mb-4 text-white text-center">Gestionar Menú</h3>
+                <form id="menu-form" class="space-y-3">
+                    <input type="text" id="menu-item-name" class="w-full p-2 rounded-md bg-gray-700 text-white" placeholder="Nombre del platillo" required>
+                    <div class="flex space-x-2">
+                        <input type="number" id="menu-item-price" class="w-1/2 p-2 rounded-md bg-gray-700 text-white" placeholder="Precio (ej: 4000)" required>
+                        <select id="menu-item-category" class="w-1/2 p-2 rounded-md bg-gray-700 text-white" required>
+                            <option value="" disabled selected>Categoría</option>
+                            <option value="Antojitos">Antojitos</option>
+                            <option value="Desayunos">Desayunos</option>
+                            <option value="Combos">Combos</option>
+                            <option value="Casados">Casados</option>
+                            <option value="Platos Fuertes">Platos Fuertes</option>
+                            <option value="Hamburguesas">Hamburguesas</option>
+                            <option value="Gallos">Gallos</option>
+                            <option value="Menú Niños">Menú Niños</option>
+                            <option value="Bebidas">Bebidas</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-md font-semibold">Añadir al Menú</button>
+                </form>
+                <div id="admin-menu-list" class="mt-4 space-y-2 max-h-48 overflow-y-auto">
+                    <!-- Admin menu list will be injected here -->
+                </div>
+            </div>
+
+            <button id="admin-logout-btn" class="w-full bg-gray-700 text-cyan-400 hover:bg-gray-600 py-2 mt-8 rounded-md font-semibold border border-cyan-400">Volver</button>
         </div>
     </div>
     
@@ -192,6 +218,15 @@
                                 <label for="orderItems" class="block text-sm font-medium text-blue-200 mb-1">Artículos del Pedido</label>
                                 <textarea id="orderItems" rows="5" required class="w-full p-3 text-white bg-gray-700 rounded-md" placeholder="Ej:\n1 Hamburguesa\n1 Papas fritas"></textarea>
                             </div>
+                             <div class="mt-4">
+                                <h4 class="text-lg font-bold text-cyan-300 mb-2">Menú Rápido</h4>
+                                 <div id="menu-categories" class="flex flex-wrap gap-2 border-b border-cyan-800 pb-2 mb-2">
+                                    <!-- Category buttons will be injected here -->
+                                </div>
+                                <div id="menuItemsContainer" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
+                                    <!-- Menu items will be injected here -->
+                                </div>
+                            </div>
                             <button type="submit" class="w-full primary-btn py-3 rounded-md text-lg font-semibold">Enviar Pedido a Cocina</button>
                         </form>
                     </div>
@@ -226,7 +261,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, where, getDocs, serverTimestamp, setLogLevel, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- Selectores de Elementos del DOM ---
@@ -240,13 +275,13 @@
         const countdownTimerEl = document.getElementById('countdown-timer');
         const authStatusEl = document.getElementById('auth-status');
         
-        // ... (resto de selectores)
         const cashierView = document.getElementById('cashierView');
         const kitchenView = document.getElementById('kitchenView');
         const historyView = document.getElementById('historyView');
         const showCashierViewBtn = document.getElementById('showCashierViewBtn');
         const showKitchenViewBtn = document.getElementById('showKitchenViewBtn');
         const showHistoryViewBtn = document.getElementById('showHistoryViewBtn');
+        
         const orderForm = document.getElementById('orderForm');
         const tableNumberSelect = document.getElementById('tableNumber');
         const orderItemsTextarea = document.getElementById('orderItems');
@@ -254,12 +289,14 @@
         const cashierOrdersContainer = document.getElementById('cashierOrders');
         const historyOrdersContainer = document.getElementById('historyOrders');
         const deleteAllHistoryBtn = document.getElementById('deleteAllHistoryBtn');
+        
         const adminPanel = document.getElementById('admin-panel');
         const adminDaysInput = document.getElementById('admin-days-input');
         const addDaysBtn = document.getElementById('add-days-btn');
         const removeDaysBtn = document.getElementById('remove-days-btn');
         const adminLogoutBtn = document.getElementById('admin-logout-btn');
         const adminFeedback = document.getElementById('admin-feedback');
+
         const confirmModal = document.getElementById('confirm-modal');
         const confirmTitle = document.getElementById('confirm-title');
         const confirmMessage = document.getElementById('confirm-message');
@@ -267,18 +304,15 @@
         const confirmNoBtn = document.getElementById('confirm-no-btn');
         let confirmCallback = null;
         
+        // Menu selectors
+        const menuItemsContainer = document.getElementById('menuItemsContainer');
+        const menuForm = document.getElementById('menu-form');
+        const menuItemNameInput = document.getElementById('menu-item-name');
+        const menuItemPriceInput = document.getElementById('menu-item-price');
+        const menuItemCategorySelect = document.getElementById('menu-item-category');
+        const adminMenuList = document.getElementById('admin-menu-list');
+        
         let db, auth;
-
-        // --- TU CONFIGURACIÓN DE FIREBASE ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyC7OIars9qrTeZo3-tFxqCeGwTA5CmZeng",
-            authDomain: "posdeventaregalodedios.firebaseapp.com",
-            projectId: "posdeventaregalodedios",
-            storageBucket: "posdeventaregalodedios.appspot.com",
-            messagingSenderId: "883274283691",
-            appId: "1:883274283691:web:ed88029e2faf58245c55ee",
-            measurementId: "G-WD5KPNQRPC"
-        };
 
         // --- Lógica de la Aplicación ---
         
@@ -292,16 +326,32 @@
             } else if (password === '2004') {
                 passwordModal.classList.add('hidden');
                 adminPanel.classList.remove('hidden');
-                if (!db) initializeFirebase();
-            } else {
+                 if (!db) initializeFirebase();
+            }
+            else {
                 errorMessage.classList.remove('hidden');
                 passwordInput.value = '';
             }
         });
+        passwordInput.addEventListener('input', () => errorMessage.classList.add('hidden'));
+        logoutBtn.addEventListener('click', () => location.reload());
+        adminLogoutBtn.addEventListener('click', () => {
+            adminPanel.classList.add('hidden');
+            passwordModal.classList.remove('hidden');
+        });
 
         async function initializeFirebase() {
-            if (db) return;
+            if (db) return; 
             try {
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+                if (!firebaseConfig.apiKey) {
+                    authStatusEl.textContent = "Error: Configuración de Firebase no encontrada.";
+                    authStatusEl.style.color = '#ef4444';
+                    return;
+                }
+
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -309,9 +359,9 @@
 
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
-                        authStatusEl.textContent = `Conectado a tu Firebase`;
+                        authStatusEl.textContent = `Conectado como: ${user.uid.substring(0,6)}`;
                         authStatusEl.style.color = '#4ade80';
-                        if (!mainContainer.classList.contains('hidden')) {
+                        if (!mainContainer.classList.contains('hidden') || !adminPanel.classList.contains('hidden')) {
                            initializeApplication();
                         }
                     } else {
@@ -319,26 +369,19 @@
                         authStatusEl.style.color = '#ffeb3b';
                     }
                 });
-
-                await signInAnonymously(auth);
+                
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
 
             } catch (error) {
                 console.error("Error inicializando Firebase:", error);
-                authStatusEl.style.color = '#ef4444'; 
-                if (error.code === 'auth/configuration-not-found') {
-                    const authUrl = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/providers`;
-                    authStatusEl.innerHTML = `<b>Error:</b> Habilita "Authentication" y el proveedor "Anónimo". <a href="${authUrl}" target="_blank" class="text-cyan-400 underline">Clic aquí para ir a la configuración.</a>`;
-                } else {
-                    authStatusEl.textContent = "Error de conexión con tu Firebase.";
-                }
+                authStatusEl.textContent = "Error de conexión con Firebase.";
+                authStatusEl.style.color = '#ef4444';
             }
         }
-        
-        logoutBtn.addEventListener('click', () => location.reload());
-        adminLogoutBtn.addEventListener('click', () => {
-            adminPanel.classList.add('hidden');
-            passwordModal.classList.remove('hidden');
-        });
 
         function initializeApplication() {
             populateTableNumbers();
@@ -347,6 +390,7 @@
             setInterval(updateClock, 1000);
             startCountdown();
             listenToOrders();
+            listenToMenu();
         }
 
         function populateTableNumbers() {
@@ -376,21 +420,26 @@
             if (items.length === 0) return;
 
             try {
-                await addDoc(collection(db, "orders"), {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const collectionPath = `artifacts/${appId}/public/data/orders`;
+
+                await addDoc(collection(db, collectionPath), {
                     tableNumber: parseInt(tableNumberSelect.value),
                     items: items,
                     status: 'En espera',
                     createdAt: serverTimestamp(),
                     closedAt: null
                 });
-                orderForm.reset();
+                orderItemsTextarea.value = '';
             } catch (error) {
                 console.error("Error al añadir pedido:", error);
             }
         });
 
         function listenToOrders() {
-            const q = query(collection(db, "orders"));
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const collectionPath = `artifacts/${appId}/public/data/orders`;
+            const q = query(collection(db, collectionPath));
 
             onSnapshot(q, (snapshot) => {
                 let orders = [];
@@ -494,8 +543,9 @@
         }
 
         const handleCardClick = async (e) => {
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const collectionPath = `artifacts/${appId}/public/data/orders`;
             const target = e.target;
-            const collectionPath = "orders";
             
             if (target.classList.contains('update-status-btn')) {
                 const { id, status } = target.dataset;
@@ -526,7 +576,9 @@
 
         deleteAllHistoryBtn.addEventListener('click', () => {
              showConfirm("Borrar TODO el Historial", "¿Estás seguro? Esta acción no se puede deshacer.", async () => {
-                const q = query(collection(db, "orders"), where("status", "==", "Cerrado"));
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const collectionPath = `artifacts/${appId}/public/data/orders`;
+                const q = query(collection(db, collectionPath), where("status", "==", "Cerrado"));
                 const querySnapshot = await getDocs(q);
                 querySnapshot.forEach(async (doc) => {
                     await deleteDoc(doc.ref);
@@ -534,6 +586,149 @@
             });
         });
 
+        // --- Menu Logic ---
+        function listenToMenu() {
+            if (!db) return;
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const collectionPath = `artifacts/${appId}/public/data/menu`;
+            const q = query(collection(db, collectionPath));
+
+            onSnapshot(q, (snapshot) => {
+                const menuItems = [];
+                snapshot.forEach(doc => menuItems.push({ id: doc.id, ...doc.data() }));
+
+                const groupedMenu = menuItems.reduce((acc, item) => {
+                    const { category } = item;
+                    if (!acc[category]) acc[category] = [];
+                    acc[category].push(item);
+                    return acc;
+                }, {});
+
+                for (const category in groupedMenu) {
+                    groupedMenu[category].sort((a, b) => a.name.localeCompare(b.name));
+                }
+                
+                const sortedCategories = Object.keys(groupedMenu).sort();
+                
+                renderMenuForCashier(groupedMenu, sortedCategories);
+                renderMenuForAdmin(groupedMenu, sortedCategories);
+            }, (error) => {
+                console.error("Error listening to menu:", error);
+            });
+        }
+
+        function renderMenuForCashier(groupedMenu, categories) {
+            const menuCategoriesContainer = document.getElementById('menu-categories');
+            menuCategoriesContainer.innerHTML = '';
+            
+            if (categories.length === 0) {
+                document.getElementById('menuItemsContainer').innerHTML = '<p class="text-gray-400 text-sm">Aún no hay platillos en el menú.</p>';
+                return;
+            }
+
+            categories.forEach((category, index) => {
+                const button = document.createElement('button');
+                button.className = 'category-btn text-sm px-3 py-1 rounded-full transition-colors';
+                button.textContent = category;
+                button.dataset.category = category;
+                
+                if (index === 0) {
+                    button.classList.add('bg-cyan-600', 'text-white');
+                } else {
+                    button.classList.add('bg-gray-700', 'text-cyan-200');
+                }
+
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('.category-btn').forEach(btn => {
+                        btn.classList.remove('bg-cyan-600', 'text-white');
+                        btn.classList.add('bg-gray-700', 'text-cyan-200');
+                    });
+                    button.classList.add('bg-cyan-600', 'text-white');
+                    button.classList.remove('bg-gray-700', 'text-cyan-200');
+                    renderMenuItems(groupedMenu[category]);
+                });
+                menuCategoriesContainer.appendChild(button);
+            });
+
+            renderMenuItems(groupedMenu[categories[0]]);
+        }
+
+        function renderMenuItems(items) {
+            const menuItemsContainer = document.getElementById('menuItemsContainer');
+            menuItemsContainer.innerHTML = '';
+            items.forEach(item => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'bg-cyan-800 hover:bg-cyan-700 text-cyan-200 text-sm px-3 py-1.5 rounded-full transition-colors';
+                button.textContent = item.name;
+                button.addEventListener('click', () => {
+                    orderItemsTextarea.value += (orderItemsTextarea.value ? '\n' : '') + `1 ${item.name} - ₡${item.price}`;
+                    orderItemsTextarea.focus();
+                });
+                menuItemsContainer.appendChild(button);
+            });
+        }
+
+        function renderMenuForAdmin(groupedMenu, categories) {
+            adminMenuList.innerHTML = '';
+            if (categories.length === 0) {
+                adminMenuList.innerHTML = '<p class="text-gray-400 text-sm text-center">Aún no hay platillos.</p>';
+                return;
+            }
+
+            categories.forEach(category => {
+                const categoryHeader = document.createElement('h4');
+                categoryHeader.className = 'text-cyan-300 font-bold mt-3 border-b border-cyan-800 pb-1';
+                categoryHeader.textContent = category;
+                adminMenuList.appendChild(categoryHeader);
+
+                groupedMenu[category].forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between items-center bg-gray-800 p-2 rounded';
+                    div.innerHTML = `
+                        <span class="text-gray-300">${item.name} <span class="text-xs text-gray-400">(₡${item.price})</span></span>
+                        <button data-id="${item.id}" class="delete-menu-item-btn text-red-400 hover:text-red-600 text-xs font-bold">BORRAR</button>
+                    `;
+                    adminMenuList.appendChild(div);
+                });
+            });
+        }
+
+        menuForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = menuItemNameInput.value.trim();
+            const price = parseInt(menuItemPriceInput.value.trim(), 10);
+            const category = menuItemCategorySelect.value;
+            if (!name || isNaN(price) || !category) return;
+
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const collectionPath = `artifacts/${appId}/public/data/menu`;
+            
+            try {
+                await addDoc(collection(db, collectionPath), { name, price, category });
+                menuForm.reset();
+            } catch (error) {
+                console.error("Error adding menu item:", error);
+            }
+        });
+
+        adminMenuList.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-menu-item-btn')) {
+                const id = e.target.dataset.id;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const collectionPath = `artifacts/${appId}/public/data/menu`;
+
+                showConfirm("Borrar Platillo", "¿Estás seguro?", async () => {
+                    try {
+                        await deleteDoc(doc(db, collectionPath, id));
+                    } catch (error) {
+                        console.error("Error deleting menu item:", error);
+                    }
+                });
+            }
+        });
+
+        // --- Other Logic ---
         function printTicket(tableNumber, items) {
             const printArea = document.getElementById('print-area');
             const formattedDate = new Date().toLocaleString('es-CR', { timeZone: 'America/Costa_Rica' });
@@ -559,7 +754,9 @@
             if (countdownInterval) clearInterval(countdownInterval);
             if (!db) return;
 
-            const countdownDocRef = doc(db, "config", 'countdown');
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const configPath = `artifacts/${appId}/public/data/config`;
+            const countdownDocRef = doc(db, configPath, 'countdown');
             
             try {
                 const docSnap = await getDoc(countdownDocRef);
@@ -601,7 +798,9 @@
                 adminFeedback.textContent = "Error: base de datos no conectada."; return;
             }
             
-            const countdownDocRef = doc(db, "config", 'countdown');
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const configPath = `artifacts/${appId}/public/data/config`;
+            const countdownDocRef = doc(db, configPath, 'countdown');
 
             try {
                  const docSnap = await getDoc(countdownDocRef);
@@ -652,4 +851,3 @@
     </script>
 </body>
 </html>
-
