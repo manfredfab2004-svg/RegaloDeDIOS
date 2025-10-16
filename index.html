@@ -261,7 +261,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, where, getDocs, serverTimestamp, setLogLevel, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- Selectores de Elementos del DOM ---
@@ -313,7 +313,18 @@
         const adminMenuList = document.getElementById('admin-menu-list');
         
         let db, auth;
-
+        
+        // --- TU PROPIA CONFIGURACIÓN DE FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyC7OIars9qrTeZo3-tFxqCeGwTA5CmZeng",
+            authDomain: "posdeventaregalodedios.firebaseapp.com",
+            projectId: "posdeventaregalodedios",
+            storageBucket: "posdeventaregalodedios.appspot.com",
+            messagingSenderId: "883274283691",
+            appId: "1:883274283691:web:ed88029e2faf58245c55ee",
+            measurementId: "G-WD5KPNQRPC"
+        };
+        
         // --- Lógica de la Aplicación ---
         
         passwordForm.addEventListener('submit', (e) => {
@@ -343,15 +354,6 @@
         async function initializeFirebase() {
             if (db) return; 
             try {
-                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-                if (!firebaseConfig.apiKey) {
-                    authStatusEl.textContent = "Error: Configuración de Firebase no encontrada.";
-                    authStatusEl.style.color = '#ef4444';
-                    return;
-                }
-
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -359,7 +361,7 @@
 
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
-                        authStatusEl.textContent = `Conectado como: ${user.uid.substring(0,6)}`;
+                        authStatusEl.textContent = `Conectado a tu Firebase`;
                         authStatusEl.style.color = '#4ade80';
                         if (!mainContainer.classList.contains('hidden') || !adminPanel.classList.contains('hidden')) {
                            initializeApplication();
@@ -370,16 +372,17 @@
                     }
                 });
                 
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
 
             } catch (error) {
                 console.error("Error inicializando Firebase:", error);
-                authStatusEl.textContent = "Error de conexión con Firebase.";
                 authStatusEl.style.color = '#ef4444';
+                if (error.code === 'auth/configuration-not-found') {
+                    const authUrl = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/providers`;
+                    authStatusEl.innerHTML = `<b>Error:</b> Habilita "Authentication" y el proveedor "Anónimo". <a href="${authUrl}" target="_blank" class="text-cyan-400 underline">Clic aquí para ir a la configuración.</a>`;
+                } else {
+                    authStatusEl.textContent = "Error de conexión con tu Firebase.";
+                }
             }
         }
 
@@ -420,10 +423,7 @@
             if (items.length === 0) return;
 
             try {
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const collectionPath = `artifacts/${appId}/public/data/orders`;
-
-                await addDoc(collection(db, collectionPath), {
+                await addDoc(collection(db, 'orders'), {
                     tableNumber: parseInt(tableNumberSelect.value),
                     items: items,
                     status: 'En espera',
@@ -437,9 +437,7 @@
         });
 
         function listenToOrders() {
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const collectionPath = `artifacts/${appId}/public/data/orders`;
-            const q = query(collection(db, collectionPath));
+            const q = query(collection(db, 'orders'));
 
             onSnapshot(q, (snapshot) => {
                 let orders = [];
@@ -543,9 +541,8 @@
         }
 
         const handleCardClick = async (e) => {
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const collectionPath = `artifacts/${appId}/public/data/orders`;
             const target = e.target;
+            const collectionPath = "orders";
             
             if (target.classList.contains('update-status-btn')) {
                 const { id, status } = target.dataset;
@@ -576,9 +573,7 @@
 
         deleteAllHistoryBtn.addEventListener('click', () => {
              showConfirm("Borrar TODO el Historial", "¿Estás seguro? Esta acción no se puede deshacer.", async () => {
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const collectionPath = `artifacts/${appId}/public/data/orders`;
-                const q = query(collection(db, collectionPath), where("status", "==", "Cerrado"));
+                const q = query(collection(db, "orders"), where("status", "==", "Cerrado"));
                 const querySnapshot = await getDocs(q);
                 querySnapshot.forEach(async (doc) => {
                     await deleteDoc(doc.ref);
@@ -589,8 +584,7 @@
         // --- Menu Logic ---
         function listenToMenu() {
             if (!db) return;
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const collectionPath = `artifacts/${appId}/public/data/menu`;
+            const collectionPath = `menu`;
             const q = query(collection(db, collectionPath));
 
             onSnapshot(q, (snapshot) => {
@@ -628,6 +622,7 @@
 
             categories.forEach((category, index) => {
                 const button = document.createElement('button');
+                button.type = 'button';
                 button.className = 'category-btn text-sm px-3 py-1 rounded-full transition-colors';
                 button.textContent = category;
                 button.dataset.category = category;
@@ -638,7 +633,8 @@
                     button.classList.add('bg-gray-700', 'text-cyan-200');
                 }
 
-                button.addEventListener('click', () => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
                     document.querySelectorAll('.category-btn').forEach(btn => {
                         btn.classList.remove('bg-cyan-600', 'text-white');
                         btn.classList.add('bg-gray-700', 'text-cyan-200');
@@ -650,7 +646,9 @@
                 menuCategoriesContainer.appendChild(button);
             });
 
-            renderMenuItems(groupedMenu[categories[0]]);
+            if (categories.length > 0) {
+               renderMenuItems(groupedMenu[categories[0]]);
+            }
         }
 
         function renderMenuItems(items) {
@@ -700,12 +698,9 @@
             const price = parseInt(menuItemPriceInput.value.trim(), 10);
             const category = menuItemCategorySelect.value;
             if (!name || isNaN(price) || !category) return;
-
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const collectionPath = `artifacts/${appId}/public/data/menu`;
             
             try {
-                await addDoc(collection(db, collectionPath), { name, price, category });
+                await addDoc(collection(db, 'menu'), { name, price, category });
                 menuForm.reset();
             } catch (error) {
                 console.error("Error adding menu item:", error);
@@ -715,12 +710,9 @@
         adminMenuList.addEventListener('click', async (e) => {
             if (e.target.classList.contains('delete-menu-item-btn')) {
                 const id = e.target.dataset.id;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const collectionPath = `artifacts/${appId}/public/data/menu`;
-
                 showConfirm("Borrar Platillo", "¿Estás seguro?", async () => {
                     try {
-                        await deleteDoc(doc(db, collectionPath, id));
+                        await deleteDoc(doc(db, 'menu', id));
                     } catch (error) {
                         console.error("Error deleting menu item:", error);
                     }
@@ -754,9 +746,7 @@
             if (countdownInterval) clearInterval(countdownInterval);
             if (!db) return;
 
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const configPath = `artifacts/${appId}/public/data/config`;
-            const countdownDocRef = doc(db, configPath, 'countdown');
+            const countdownDocRef = doc(db, "config", 'countdown');
             
             try {
                 const docSnap = await getDoc(countdownDocRef);
@@ -798,9 +788,7 @@
                 adminFeedback.textContent = "Error: base de datos no conectada."; return;
             }
             
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const configPath = `artifacts/${appId}/public/data/config`;
-            const countdownDocRef = doc(db, configPath, 'countdown');
+            const countdownDocRef = doc(db, "config", 'countdown');
 
             try {
                  const docSnap = await getDoc(countdownDocRef);
