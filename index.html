@@ -911,10 +911,14 @@
 
             const qOrders = query(collection(db, "orders"));
             const orderSnapshot = await getDocs(qOrders);
-            const activeOrders = orderSnapshot.docs.filter(doc => doc.data().status !== 'Cerrado');
+            const allOrders = orderSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+
+            const activeOrders = allOrders.filter(order => order.status !== 'Cerrado');
 
             if (activeOrders.length > 0) {
-                showConfirm("Error", "No se puede cerrar el día. Aún hay pedidos activos en el sistema.", () => {});
+                const activeTables = activeOrders.map(o => o.tableNumber).join(', ');
+                const errorMessage = `No se puede cerrar el día. Las siguientes mesas tienen pedidos activos: Mesa ${activeTables}. Por favor, ciérralos desde la Vista Caja.`;
+                showConfirm("Error", errorMessage, () => {});
                 confirmYesBtn.classList.add('hidden');
                 confirmNoBtn.textContent = 'Entendido';
                 confirmNoBtn.onclick = () => {
@@ -924,20 +928,11 @@
                 };
                 return;
             }
-
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            const qClosedToday = query(collection(db, "orders"), where("status", "==", "Cerrado"));
-            const allClosedSnapshot = await getDocs(qClosedToday);
-
-            const closedTodayDocs = allClosedSnapshot.docs.filter(doc => {
-                const order = doc.data();
-                return order.closedAt && order.closedAt.toDate() >= today;
-            });
             
-            if(closedTodayDocs.length === 0) {
-                showConfirm("Cierre de Día", "No hay ventas registradas para cerrar el día de hoy.", () => location.reload());
+            const closedDocs = orderSnapshot.docs.filter(doc => doc.data().status === 'Cerrado');
+            
+            if(closedDocs.length === 0) {
+                showConfirm("Cierre de Día", "No hay ventas facturadas para cerrar.", () => location.reload());
                  confirmYesBtn.classList.add('hidden');
                  confirmNoBtn.textContent = 'OK';
                  confirmNoBtn.onclick = () => location.reload();
@@ -947,7 +942,7 @@
             let totalSales = 0;
             const itemCounts = {};
             
-            closedTodayDocs.forEach(doc => {
+            closedDocs.forEach(doc => {
                 const order = doc.data();
                 totalSales += order.total || 0;
                 order.items.forEach(itemString => {
@@ -956,21 +951,19 @@
                 });
             });
 
-            printDailyReport(totalSales, itemCounts, closedTodayDocs.length);
+            printDailyReport(totalSales, itemCounts, closedDocs.length);
 
-            // Guardar reporte diario
             const reportDate = new Date();
             const reportId = `${reportDate.getFullYear()}-${String(reportDate.getMonth() + 1).padStart(2, '0')}-${String(reportDate.getDate()).padStart(2, '0')}`;
             const reportData = {
                 date: serverTimestamp(),
                 totalSales,
                 itemCounts,
-                orderCount: closedTodayDocs.length
+                orderCount: closedDocs.length
             };
             await setDoc(doc(db, "daily_reports", reportId), reportData);
 
-            // Borrar pedidos del día que ya fueron archivados en el reporte
-            const deletePromises = closedTodayDocs.map(doc => deleteDoc(doc.ref));
+            const deletePromises = closedDocs.map(doc => deleteDoc(doc.ref));
             await Promise.all(deletePromises);
             
             showConfirm("¡Éxito!", "El día ha sido cerrado y el reporte se ha impreso y guardado.", () => location.reload());
@@ -1010,7 +1003,7 @@
                     if (distance < 0) {
                         clearInterval(countdownInterval);
                         countdownTimerEl.innerHTML = "¡Finalizado!";
-                        currentUserPassword = '8873'; // Cambia la contraseña
+                        currentUserPassword = '8873';
                         return;
                     }
                     const d = Math.floor(distance / 86400000), h = Math.floor((distance % 86400000) / 3600000), m = Math.floor((distance % 3600000) / 60000), s = Math.floor((distance % 60000) / 1000);
