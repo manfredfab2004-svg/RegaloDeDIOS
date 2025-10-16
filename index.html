@@ -69,6 +69,11 @@
         .primary-btn:hover {
             background-color: #00e5ff;
         }
+        .primary-btn:disabled {
+            background-color: #5a5a5a;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
 
         /* Estilos de inputs y otros elementos */
         .form-panel input, .form-panel select, .form-panel textarea {
@@ -181,6 +186,32 @@
             </div>
         </div>
     </div>
+    
+    <!-- Modal de Cobro -->
+    <div id="payment-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="modal-panel p-8 rounded-lg shadow-2xl w-full max-w-sm">
+            <h2 class="text-3xl font-bold mb-6 text-center text-cyan-400">Realizar Cobro</h2>
+            <div class="space-y-4 text-lg">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-300">Total a Pagar:</span>
+                    <span id="payment-total" class="font-bold text-yellow-400">₡0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <label for="payment-paid" class="text-gray-300">Paga con:</label>
+                    <input type="number" id="payment-paid" class="w-1/2 p-2 rounded-md bg-gray-700 text-white text-right" placeholder="0">
+                </div>
+                <div class="flex justify-between items-center text-xl">
+                    <span class="text-gray-300">Vuelto:</span>
+                    <span id="payment-change" class="font-bold text-green-400">₡0</span>
+                </div>
+            </div>
+            <div class="flex justify-center space-x-4 mt-8">
+                <button id="finalize-payment-btn" class="flex-1 primary-btn py-3 rounded-md font-semibold" disabled>Finalizar, Imprimir y Cerrar</button>
+                <button id="cancel-payment-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 py-3 rounded-md font-semibold">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Contenido Principal de la Aplicación -->
     <div class="container mx-auto p-4 hidden">
@@ -311,7 +342,16 @@
         const menuItemPriceInput = document.getElementById('menu-item-price');
         const menuItemCategorySelect = document.getElementById('menu-item-category');
         const adminMenuList = document.getElementById('admin-menu-list');
-        
+
+        // Payment Modal selectors
+        const paymentModal = document.getElementById('payment-modal');
+        const paymentTotalEl = document.getElementById('payment-total');
+        const paymentPaidInput = document.getElementById('payment-paid');
+        const paymentChangeEl = document.getElementById('payment-change');
+        const finalizePaymentBtn = document.getElementById('finalize-payment-btn');
+        const cancelPaymentBtn = document.getElementById('cancel-payment-btn');
+        let currentOrderForPayment = null;
+
         let db, auth;
         
         // --- TU PROPIA CONFIGURACIÓN DE FIREBASE ---
@@ -549,15 +589,13 @@
                 await updateDoc(doc(db, collectionPath, id), { status });
             }
             if (target.classList.contains('close-order-btn')) {
-                const { id, order } = target.dataset;
-                const orderData = JSON.parse(order);
-                printTicket(orderData.tableNumber, orderData.items);
-                await updateDoc(doc(db, collectionPath, id), { status: "Cerrado", closedAt: serverTimestamp() });
+                const orderData = JSON.parse(target.dataset.order);
+                showPaymentModal(orderData);
             }
             if (target.classList.contains('reprint-btn')) {
                 const { order } = target.dataset;
                 const orderData = JSON.parse(order);
-                printTicket(orderData.tableNumber, orderData.items);
+                printTicket(orderData.tableNumber, orderData.items, orderData.total);
             }
             if (target.classList.contains('delete-order-btn')) {
                 const { id } = target.dataset;
@@ -720,17 +758,94 @@
             }
         });
 
+        // --- Payment Modal Logic ---
+        function calculateTotal(items) {
+            return items.reduce((total, item) => {
+                const priceMatch = item.match(/₡(\d+)/);
+                if (priceMatch && priceMatch[1]) {
+                    return total + parseInt(priceMatch[1], 10);
+                }
+                return total;
+            }, 0);
+        }
+
+        function showPaymentModal(order) {
+            currentOrderForPayment = order;
+            const total = calculateTotal(order.items);
+            paymentTotalEl.textContent = `₡${total.toLocaleString('es-CR')}`;
+            paymentPaidInput.value = '';
+            paymentChangeEl.textContent = '₡0';
+            finalizePaymentBtn.disabled = true;
+            paymentModal.classList.remove('hidden');
+            paymentPaidInput.focus();
+        }
+
+        paymentPaidInput.addEventListener('input', () => {
+            const total = calculateTotal(currentOrderForPayment.items);
+            const paid = parseInt(paymentPaidInput.value, 10) || 0;
+            const change = paid - total;
+            
+            if (change >= 0) {
+                paymentChangeEl.textContent = `₡${change.toLocaleString('es-CR')}`;
+                finalizePaymentBtn.disabled = false;
+            } else {
+                paymentChangeEl.textContent = '₡0';
+                finalizePaymentBtn.disabled = true;
+            }
+        });
+
+        cancelPaymentBtn.addEventListener('click', () => {
+            paymentModal.classList.add('hidden');
+            currentOrderForPayment = null;
+        });
+
+        finalizePaymentBtn.addEventListener('click', async () => {
+            const total = calculateTotal(currentOrderForPayment.items);
+            const paid = parseInt(paymentPaidInput.value, 10);
+            const change = paid - total;
+            
+            printTicket(currentOrderForPayment.tableNumber, currentOrderForPayment.items, total, paid, change);
+            
+            const collectionPath = "orders";
+            await updateDoc(doc(db, collectionPath, currentOrderForPayment.id), { 
+                status: "Cerrado", 
+                closedAt: serverTimestamp(),
+                total: total
+            });
+            
+            paymentModal.classList.add('hidden');
+            currentOrderForPayment = null;
+        });
+
+
         // --- Other Logic ---
-        function printTicket(tableNumber, items) {
+        function printTicket(tableNumber, items, total, paid, change) {
             const printArea = document.getElementById('print-area');
             const formattedDate = new Date().toLocaleString('es-CR', { timeZone: 'America/Costa_Rica' });
             const itemsHtml = items.map(item => `<li>${item}</li>`).join('');
+            
+            let paymentHtml = '';
+            if (total !== undefined && paid !== undefined && change !== undefined) {
+                 paymentHtml = `
+                    <p>----------------------------------------</p>
+                    <p><strong>Total: ₡${total.toLocaleString('es-CR')}</strong></p>
+                    <p>Paga con: ₡${paid.toLocaleString('es-CR')}</p>
+                    <p>Vuelto: ₡${change.toLocaleString('es-CR')}</p>
+                 `;
+            } else if (total !== undefined) {
+                 paymentHtml = `
+                    <p>----------------------------------------</p>
+                    <p><strong>Total: ₡${total.toLocaleString('es-CR')}</strong></p>
+                 `;
+            }
+
             printArea.innerHTML = `
                 <h1>Restaurante Regalo de Dios</h1>
                 <p>Fecha: ${formattedDate}</p>
                 <p>Mesa: ${tableNumber}</p>
                 <ul>${itemsHtml}</ul>
-                <p style="text-align: center;">¡Gracias por su visita!</p>`;
+                ${paymentHtml}
+                <p style="text-align: center; margin-top: 10px;">¡Gracias por su visita!</p>`;
             printArea.classList.remove('hidden');
             window.print();
             printArea.classList.add('hidden');
