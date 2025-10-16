@@ -175,7 +175,7 @@
         </div>
     </div>
     
-    <!-- Modal de Confirmación -->
+    <!-- Modal de Confirmación Genérico -->
     <div id="confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
         <div class="modal-panel p-8 rounded-lg shadow-2xl text-center w-full max-w-sm">
             <h2 id="confirm-title" class="text-2xl font-bold mb-4 text-white">Confirmar Acción</h2>
@@ -183,6 +183,19 @@
             <div class="flex justify-center space-x-4">
                 <button id="confirm-yes-btn" class="px-8 py-2 bg-red-800 hover:bg-red-900 rounded-md font-semibold">Sí</button>
                 <button id="confirm-no-btn" class="px-8 py-2 bg-gray-600 hover:bg-gray-700 rounded-md font-semibold">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Cerrar Sesión / Cerrar Día -->
+    <div id="logout-confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="modal-panel p-8 rounded-lg shadow-2xl text-center w-full max-w-sm">
+            <h2 class="text-2xl font-bold mb-4 text-white">¿Qué deseas hacer?</h2>
+            <p id="logout-info" class="text-gray-300 mb-6">Puedes cerrar tu sesión temporalmente o realizar el cierre de caja del día.</p>
+            <div class="space-y-4">
+                <button id="close-day-btn" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-md font-semibold">Cerrar Día y Imprimir Reporte</button>
+                <button id="just-logout-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-md font-semibold">Cerrar Sesión por ahora</button>
+                <button id="cancel-logout-btn" class="w-full text-cyan-400 hover:text-white py-2 mt-4 rounded-md">Cancelar</button>
             </div>
         </div>
     </div>
@@ -230,6 +243,7 @@
                 <button id="showCashierViewBtn" class="view-button px-6 py-2 rounded-full font-semibold">Vista Caja</button>
                 <button id="showKitchenViewBtn" class="view-button px-6 py-2 rounded-full font-semibold">Vista Cocina</button>
                 <button id="showHistoryViewBtn" class="view-button px-6 py-2 rounded-full font-semibold">Historial</button>
+                <button id="showReportsViewBtn" class="view-button px-6 py-2 rounded-full font-semibold">Reportes</button>
             </div>
              <div id="auth-status" class="text-center mt-4 text-sm text-gray-400">Conectando a Firebase...</div>
         </header>
@@ -258,7 +272,10 @@
                                     <!-- Menu items will be injected here -->
                                 </div>
                             </div>
-                            <button type="submit" class="w-full primary-btn py-3 rounded-md text-lg font-semibold">Enviar Pedido a Cocina</button>
+                            <div class="flex space-x-2 mt-6">
+                                <button id="send-to-kitchen-btn" type="button" class="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white py-3 rounded-md font-semibold">Enviar a Cocina</button>
+                                <button id="print-and-send-btn" type="button" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-semibold">Imprimir y Enviar</button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -285,6 +302,33 @@
             </div>
             <div id="historyOrders" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
         </div>
+
+        <!-- Vista Reportes -->
+        <div id="reportsView" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 form-panel p-8 rounded-lg">
+                    <h2 id="report-date-display" class="text-3xl font-bold mb-6 text-center text-cyan-400">Reporte del Día</h2>
+                    <div class="space-y-8">
+                        <div>
+                            <h3 class="text-2xl font-bold text-cyan-300 mb-4">Ventas Totales</h3>
+                            <p id="total-sales" class="text-4xl font-bold text-yellow-400">₡0</p>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-cyan-300 mb-4">Resumen de Platillos Vendidos</h3>
+                            <div id="top-items-list" class="space-y-2 max-h-96 overflow-y-auto pr-4">
+                               <p class="text-gray-400">No hay datos para mostrar.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <div class="form-panel p-8 rounded-lg">
+                    <h3 class="text-2xl font-bold text-cyan-300 mb-4">Cierres de Día Guardados</h3>
+                    <div id="past-reports-list" class="space-y-2 max-h-[calc(100vh-20rem)] overflow-y-auto">
+                        <p class="text-gray-400">No hay reportes guardados.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- Área de Impresión (oculta) -->
@@ -309,9 +353,11 @@
         const cashierView = document.getElementById('cashierView');
         const kitchenView = document.getElementById('kitchenView');
         const historyView = document.getElementById('historyView');
+        const reportsView = document.getElementById('reportsView');
         const showCashierViewBtn = document.getElementById('showCashierViewBtn');
         const showKitchenViewBtn = document.getElementById('showKitchenViewBtn');
         const showHistoryViewBtn = document.getElementById('showHistoryViewBtn');
+        const showReportsViewBtn = document.getElementById('showReportsViewBtn');
         
         const orderForm = document.getElementById('orderForm');
         const tableNumberSelect = document.getElementById('tableNumber');
@@ -335,6 +381,12 @@
         const confirmNoBtn = document.getElementById('confirm-no-btn');
         let confirmCallback = null;
         
+        // Logout/Close Day Modal selectors
+        const logoutConfirmModal = document.getElementById('logout-confirm-modal');
+        const closeDayBtn = document.getElementById('close-day-btn');
+        const justLogoutBtn = document.getElementById('just-logout-btn');
+        const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
+
         // Menu selectors
         const menuItemsContainer = document.getElementById('menuItemsContainer');
         const menuForm = document.getElementById('menu-form');
@@ -352,7 +404,14 @@
         const cancelPaymentBtn = document.getElementById('cancel-payment-btn');
         let currentOrderForPayment = null;
 
+        // Reports selectors
+        const reportDateDisplay = document.getElementById('report-date-display');
+        const totalSalesEl = document.getElementById('total-sales');
+        const topItemsListEl = document.getElementById('top-items-list');
+        const pastReportsListEl = document.getElementById('past-reports-list');
+
         let db, auth;
+        let currentUserPassword = '1234'; // Variable para la contraseña
         
         // --- TU PROPIA CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = {
@@ -370,7 +429,7 @@
         passwordForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const password = passwordInput.value;
-            if (password === '1234') {
+            if (password === currentUserPassword) { // Usa la variable de contraseña
                 passwordModal.classList.add('hidden');
                 mainContainer.classList.remove('hidden');
                 initializeFirebase();
@@ -385,7 +444,12 @@
             }
         });
         passwordInput.addEventListener('input', () => errorMessage.classList.add('hidden'));
-        logoutBtn.addEventListener('click', () => location.reload());
+        
+        logoutBtn.addEventListener('click', () => logoutConfirmModal.classList.remove('hidden'));
+        cancelLogoutBtn.addEventListener('click', () => logoutConfirmModal.classList.add('hidden'));
+        justLogoutBtn.addEventListener('click', () => location.reload());
+        closeDayBtn.addEventListener('click', handleCloseDay);
+
         adminLogoutBtn.addEventListener('click', () => {
             adminPanel.classList.add('hidden');
             passwordModal.classList.remove('hidden');
@@ -434,6 +498,7 @@
             startCountdown();
             listenToOrders();
             listenToMenu();
+            listenToDailyReports();
         }
 
         function populateTableNumbers() {
@@ -447,25 +512,48 @@
         }
         
         function switchView(view) {
-            [cashierView, kitchenView, historyView].forEach(v => v.classList.add('hidden'));
-            [showCashierViewBtn, showKitchenViewBtn, showHistoryViewBtn].forEach(b => b.classList.remove('active'));
-            if (view === 'cashier') cashierView.classList.remove('hidden'), showCashierViewBtn.classList.add('active');
-            else if (view === 'kitchen') kitchenView.classList.remove('hidden'), showKitchenViewBtn.classList.add('active');
-            else if (view === 'history') historyView.classList.remove('hidden'), showHistoryViewBtn.classList.add('active');
+            [cashierView, kitchenView, historyView, reportsView].forEach(v => v.classList.add('hidden'));
+            [showCashierViewBtn, showKitchenViewBtn, showHistoryViewBtn, showReportsViewBtn].forEach(b => b.classList.remove('active'));
+            if (view === 'cashier') {
+                cashierView.classList.remove('hidden');
+                showCashierViewBtn.classList.add('active');
+            } else if (view === 'kitchen') {
+                kitchenView.classList.remove('hidden');
+                showKitchenViewBtn.classList.add('active');
+            } else if (view === 'history') {
+                historyView.classList.remove('hidden');
+                showHistoryViewBtn.classList.add('active');
+            } else if (view === 'reports') {
+                reportsView.classList.remove('hidden');
+                showReportsViewBtn.classList.add('active');
+                generateCurrentDayReport(); 
+            }
         }
         showCashierViewBtn.addEventListener('click', () => switchView('cashier'));
         showKitchenViewBtn.addEventListener('click', () => switchView('kitchen'));
         showHistoryViewBtn.addEventListener('click', () => switchView('history'));
+        showReportsViewBtn.addEventListener('click', () => switchView('reports'));
+        
+        const sendToKitchenBtn = document.getElementById('send-to-kitchen-btn');
+        const printAndSendBtn = document.getElementById('print-and-send-btn');
+        
+        sendToKitchenBtn.addEventListener('click', () => submitOrder(false));
+        printAndSendBtn.addEventListener('click', () => submitOrder(true));
 
-        orderForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        async function submitOrder(print = false) {
             const items = orderItemsTextarea.value.trim().split('\n').filter(Boolean);
             if (items.length === 0) return;
+            const tableNumber = parseInt(tableNumberSelect.value);
+
+            if(print) {
+                const tempOrder = { tableNumber, items };
+                printKitchenTicket(tempOrder);
+            }
 
             try {
                 await addDoc(collection(db, 'orders'), {
-                    tableNumber: parseInt(tableNumberSelect.value),
-                    items: items,
+                    tableNumber,
+                    items,
                     status: 'En espera',
                     createdAt: serverTimestamp(),
                     closedAt: null
@@ -474,7 +562,7 @@
             } catch (error) {
                 console.error("Error al añadir pedido:", error);
             }
-        });
+        }
 
         function listenToOrders() {
             const q = query(collection(db, 'orders'));
@@ -537,11 +625,10 @@
                     <ul class="list-disc list-inside space-y-1 mb-4">${itemsHtml}</ul>
                     <p class="text-xs text-gray-400">${time}</p>
                 </div>
-                ${order.status !== 'Listo' ? `
                 <div class="flex space-x-2 p-4 pt-0">
                     ${order.status === 'En espera' ? `<button data-id="${order.id}" data-status="Visto" class="update-status-btn flex-1 bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded-md text-sm font-semibold">Marcar Visto</button>` : ''}
                     ${order.status === 'Visto' ? `<button data-id="${order.id}" data-status="Listo" class="update-status-btn flex-1 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold">Marcar Listo</button>` : ''}
-                </div>` : '<div class="p-4 text-center text-sm font-semibold text-emerald-500">Pedido completado</div>'}`;
+                </div>`;
             return card;
         }
 
@@ -613,9 +700,11 @@
              showConfirm("Borrar TODO el Historial", "¿Estás seguro? Esta acción no se puede deshacer.", async () => {
                 const q = query(collection(db, "orders"), where("status", "==", "Cerrado"));
                 const querySnapshot = await getDocs(q);
-                querySnapshot.forEach(async (doc) => {
-                    await deleteDoc(doc.ref);
+                const deletePromises = [];
+                querySnapshot.forEach((doc) => {
+                    deletePromises.push(deleteDoc(doc.ref));
                 });
+                await Promise.all(deletePromises);
             });
         });
 
@@ -763,7 +852,9 @@
             return items.reduce((total, item) => {
                 const priceMatch = item.match(/₡(\d+)/);
                 if (priceMatch && priceMatch[1]) {
-                    return total + parseInt(priceMatch[1], 10);
+                    const quantityMatch = item.match(/^(\d+)\s/);
+                    const quantity = quantityMatch ? parseInt(quantityMatch[1], 10) : 1;
+                    return total + (parseInt(priceMatch[1], 10) * quantity);
                 }
                 return total;
             }, 0);
@@ -851,6 +942,117 @@
             printArea.classList.add('hidden');
             printArea.innerHTML = '';
         }
+        
+        function printKitchenTicket(order) {
+            const printArea = document.getElementById('print-area');
+            const formattedDate = new Date().toLocaleString('es-CR', { timeZone: 'America/Costa_Rica' });
+            const itemsHtml = order.items.map(item => `<li>${item}</li>`).join('');
+
+            printArea.innerHTML = `
+                <h1>COMANDA - Mesa ${order.tableNumber}</h1>
+                <p>Hora: ${formattedDate}</p>
+                <ul>${itemsHtml}</ul>
+            `;
+            printArea.classList.remove('hidden');
+            window.print();
+            printArea.classList.add('hidden');
+            printArea.innerHTML = '';
+        }
+        
+        function printDailyReport(totalSales, itemCounts, orderCount) {
+             const printArea = document.getElementById('print-area');
+            const formattedDate = new Date().toLocaleString('es-CR', { timeZone: 'America/Costa_Rica' });
+            const topItemsHtml = Object.entries(itemCounts).sort(([,a],[,b]) => b-a).map(([name, count]) => `<li>${count}x - ${name}</li>`).join('');
+
+            printArea.innerHTML = `
+                <h1>CIERRE DE CAJA (CORTE Z)</h1>
+                <p>Fecha de Cierre: ${formattedDate}</p>
+                <p>----------------------------------------</p>
+                <p><strong>Venta Total del Día: ₡${totalSales.toLocaleString('es-CR')}</strong></p>
+                <p>Pedidos Totales: ${orderCount}</p>
+                <p>----------------------------------------</p>
+                <h3>Platillos Vendidos:</h3>
+                <ul>${topItemsHtml}</ul>
+            `;
+            printArea.classList.remove('hidden');
+            window.print();
+            printArea.classList.add('hidden');
+            printArea.innerHTML = '';
+        }
+
+        async function handleCloseDay() {
+            logoutConfirmModal.classList.add('hidden');
+
+            const qOrders = query(collection(db, "orders"));
+            const orderSnapshot = await getDocs(qOrders);
+            const activeOrders = orderSnapshot.docs.filter(doc => doc.data().status !== 'Cerrado');
+
+            if (activeOrders.length > 0) {
+                showConfirm("Error", "No se puede cerrar el día. Aún hay pedidos activos en el sistema.", () => {});
+                confirmYesBtn.classList.add('hidden');
+                confirmNoBtn.textContent = 'Entendido';
+                confirmNoBtn.onclick = () => {
+                    confirmModal.classList.add('hidden');
+                    confirmYesBtn.classList.remove('hidden');
+                    confirmNoBtn.textContent = 'No';
+                };
+                return;
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const qClosedToday = query(collection(db, "orders"), where("status", "==", "Cerrado"));
+            const allClosedSnapshot = await getDocs(qClosedToday);
+
+            const closedTodayDocs = allClosedSnapshot.docs.filter(doc => {
+                const order = doc.data();
+                return order.closedAt && order.closedAt.toDate() >= today;
+            });
+            
+            if(closedTodayDocs.length === 0) {
+                showConfirm("Cierre de Día", "No hay ventas registradas para cerrar el día de hoy.", () => location.reload());
+                 confirmYesBtn.classList.add('hidden');
+                 confirmNoBtn.textContent = 'OK';
+                 confirmNoBtn.onclick = () => location.reload();
+                return;
+            }
+
+            let totalSales = 0;
+            const itemCounts = {};
+            
+            closedTodayDocs.forEach(doc => {
+                const order = doc.data();
+                totalSales += order.total || 0;
+                order.items.forEach(itemString => {
+                    const itemName = itemString.replace(/^\d+\s/, '').replace(/\s-\s₡\d+$/, '').trim();
+                    itemCounts[itemName] = (itemCounts[itemName] || 0) + 1;
+                });
+            });
+
+            printDailyReport(totalSales, itemCounts, closedTodayDocs.length);
+
+            // Guardar reporte diario
+            const reportDate = new Date();
+            const reportId = `${reportDate.getFullYear()}-${String(reportDate.getMonth() + 1).padStart(2, '0')}-${String(reportDate.getDate()).padStart(2, '0')}`;
+            const reportData = {
+                date: serverTimestamp(),
+                totalSales,
+                itemCounts,
+                orderCount: closedTodayDocs.length
+            };
+            await setDoc(doc(db, "daily_reports", reportId), reportData);
+
+            // Borrar pedidos del día que ya fueron archivados en el reporte
+            const deletePromises = closedTodayDocs.map(doc => deleteDoc(doc.ref));
+            await Promise.all(deletePromises);
+            
+            showConfirm("¡Éxito!", "El día ha sido cerrado y el reporte se ha impreso y guardado.", () => location.reload());
+            confirmYesBtn.classList.add('hidden');
+            confirmNoBtn.textContent = 'OK';
+            confirmNoBtn.onclick = () => location.reload();
+        }
+
 
         function updateClock() {
             liveClockEl.textContent = new Date().toLocaleTimeString('es-CR', { timeZone: 'America/Costa_Rica' });
@@ -882,6 +1084,7 @@
                     if (distance < 0) {
                         clearInterval(countdownInterval);
                         countdownTimerEl.innerHTML = "¡Finalizado!";
+                        currentUserPassword = '8873'; // Cambia la contraseña
                         return;
                     }
                     const d = Math.floor(distance / 86400000), h = Math.floor((distance % 86400000) / 3600000), m = Math.floor((distance % 3600000) / 60000), s = Math.floor((distance % 60000) / 1000);
@@ -935,12 +1138,91 @@
         addDaysBtn.addEventListener('click', () => updateCountdownAdmin(adminDaysInput.value, 'add'));
         removeDaysBtn.addEventListener('click', () => updateCountdownAdmin(adminDaysInput.value, 'remove'));
 
+        // --- Reports Logic ---
+
+        function displayReportData(title, data) {
+            reportDateDisplay.textContent = title;
+            totalSalesEl.textContent = `₡${(data.totalSales || 0).toLocaleString('es-CR')}`;
+            
+            const sortedItems = Object.entries(data.itemCounts || {}).sort(([, a], [, b]) => b - a);
+
+            topItemsListEl.innerHTML = '';
+            if (sortedItems.length === 0) {
+                topItemsListEl.innerHTML = '<p class="text-gray-400">No hay datos para mostrar.</p>';
+            } else {
+                sortedItems.forEach(([name, count]) => {
+                    const div = document.createElement('div');
+                    div.className = "flex justify-between items-center text-gray-300";
+                    div.innerHTML = `<span>${name}</span> <span class="font-bold text-cyan-400">${count}</span>`;
+                    topItemsListEl.appendChild(div);
+                });
+            }
+        }
+
+        async function generateCurrentDayReport() {
+            if (!db) return;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const q = query(collection(db, "orders"), where("status", "==", "Cerrado"));
+            const querySnapshot = await getDocs(q);
+
+            let totalSales = 0;
+            const itemCounts = {};
+
+            querySnapshot.forEach(doc => {
+                const order = doc.data();
+                if (order.closedAt && order.closedAt.toDate() >= today) {
+                    totalSales += order.total || 0;
+                    order.items.forEach(itemString => {
+                        const itemName = itemString.replace(/^\d+\s/, '').replace(/\s-\s₡\d+$/, '').trim();
+                        itemCounts[itemName] = (itemCounts[itemName] || 0) + 1;
+                    });
+                }
+            });
+
+            displayReportData('Reporte de Hoy (En Vivo)', { totalSales, itemCounts });
+        }
+        
+        function listenToDailyReports() {
+             if (!db) return;
+            const q = query(collection(db, "daily_reports"));
+
+            onSnapshot(q, (snapshot) => {
+                const reports = [];
+                snapshot.forEach(doc => reports.push({ id: doc.id, ...doc.data() }));
+                reports.sort((a,b) => b.date.seconds - a.date.seconds); // Sort by most recent
+                
+                pastReportsListEl.innerHTML = '';
+                if(reports.length === 0) {
+                    pastReportsListEl.innerHTML = '<p class="text-gray-400">No hay reportes guardados.</p>';
+                    return;
+                }
+
+                reports.forEach(report => {
+                    const button = document.createElement('button');
+                    button.className = 'w-full text-left p-2 rounded-md hover:bg-cyan-800 transition-colors view-button';
+                    button.textContent = report.id;
+                    button.onclick = () => {
+                         displayReportData(`Reporte de ${report.id}`, report);
+                    };
+                    pastReportsListEl.appendChild(button);
+                });
+            });
+        }
 
         function showConfirm(title, message, callback) {
             confirmTitle.textContent = title;
             confirmMessage.textContent = message;
             confirmCallback = callback;
             confirmModal.classList.remove('hidden');
+             // Reset buttons
+            confirmYesBtn.classList.remove('hidden');
+            confirmNoBtn.textContent = 'No';
+            confirmNoBtn.onclick = () => {
+                confirmModal.classList.add('hidden');
+                confirmCallback = null;
+            };
         }
         confirmNoBtn.addEventListener('click', () => {
             confirmModal.classList.add('hidden');
