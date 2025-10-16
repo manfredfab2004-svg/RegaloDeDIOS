@@ -144,33 +144,6 @@
                 </div>
                 <p id="admin-feedback" class="text-green-400 text-sm mt-2 h-4 text-center"></p>
             </div>
-
-            <div class="mt-8 border-t border-cyan-700 pt-6">
-                <h3 class="text-xl font-bold mb-4 text-white text-center">Gestionar Menú</h3>
-                <form id="menu-form" class="space-y-3">
-                    <input type="text" id="menu-item-name" class="w-full p-2 rounded-md bg-gray-700 text-white" placeholder="Nombre del platillo" required>
-                    <div class="flex space-x-2">
-                        <input type="number" id="menu-item-price" class="w-1/2 p-2 rounded-md bg-gray-700 text-white" placeholder="Precio (ej: 4000)" required>
-                        <select id="menu-item-category" class="w-1/2 p-2 rounded-md bg-gray-700 text-white" required>
-                            <option value="" disabled selected>Categoría</option>
-                            <option value="Antojitos">Antojitos</option>
-                            <option value="Desayunos">Desayunos</option>
-                            <option value="Combos">Combos</option>
-                            <option value="Casados">Casados</option>
-                            <option value="Platos Fuertes">Platos Fuertes</option>
-                            <option value="Hamburguesas">Hamburguesas</option>
-                            <option value="Gallos">Gallos</option>
-                            <option value="Menú Niños">Menú Niños</option>
-                            <option value="Bebidas">Bebidas</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-md font-semibold">Añadir al Menú</button>
-                </form>
-                <div id="admin-menu-list" class="mt-4 space-y-2 max-h-48 overflow-y-auto">
-                    <!-- Admin menu list will be injected here -->
-                </div>
-            </div>
-
             <button id="admin-logout-btn" class="w-full bg-gray-700 text-cyan-400 hover:bg-gray-600 py-2 mt-8 rounded-md font-semibold border border-cyan-400">Volver</button>
         </div>
     </div>
@@ -337,7 +310,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, where, getDocs, serverTimestamp, setLogLevel, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, where, getDocs, serverTimestamp, setLogLevel, getDoc, setDoc, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- Selectores de Elementos del DOM ---
         const passwordModal = document.getElementById('password-modal');
@@ -389,12 +362,7 @@
 
         // Menu selectors
         const menuItemsContainer = document.getElementById('menuItemsContainer');
-        const menuForm = document.getElementById('menu-form');
-        const menuItemNameInput = document.getElementById('menu-item-name');
-        const menuItemPriceInput = document.getElementById('menu-item-price');
-        const menuItemCategorySelect = document.getElementById('menu-item-category');
-        const adminMenuList = document.getElementById('admin-menu-list');
-
+        
         // Payment Modal selectors
         const paymentModal = document.getElementById('payment-modal');
         const paymentTotalEl = document.getElementById('payment-total');
@@ -429,7 +397,7 @@
         passwordForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const password = passwordInput.value;
-            if (password === currentUserPassword) { // Usa la variable de contraseña
+            if (password === currentUserPassword) {
                 passwordModal.classList.add('hidden');
                 mainContainer.classList.remove('hidden');
                 initializeFirebase();
@@ -463,11 +431,12 @@
                 auth = getAuth(app);
                 setLogLevel('error');
 
-                onAuthStateChanged(auth, (user) => {
+                onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         authStatusEl.textContent = `Conectado a tu Firebase`;
                         authStatusEl.style.color = '#4ade80';
                         if (!mainContainer.classList.contains('hidden') || !adminPanel.classList.contains('hidden')) {
+                           await seedMenuData();
                            initializeApplication();
                         }
                     } else {
@@ -732,7 +701,6 @@
                 const sortedCategories = Object.keys(groupedMenu).sort();
                 
                 renderMenuForCashier(groupedMenu, sortedCategories);
-                renderMenuForAdmin(groupedMenu, sortedCategories);
             }, (error) => {
                 console.error("Error listening to menu:", error);
             });
@@ -743,7 +711,7 @@
             menuCategoriesContainer.innerHTML = '';
             
             if (categories.length === 0) {
-                document.getElementById('menuItemsContainer').innerHTML = '<p class="text-gray-400 text-sm">Aún no hay platillos en el menú.</p>';
+                document.getElementById('menuItemsContainer').innerHTML = '<p class="text-gray-400 text-sm">Cargando menú...</p>';
                 return;
             }
 
@@ -793,60 +761,7 @@
                 menuItemsContainer.appendChild(button);
             });
         }
-
-        function renderMenuForAdmin(groupedMenu, categories) {
-            adminMenuList.innerHTML = '';
-            if (categories.length === 0) {
-                adminMenuList.innerHTML = '<p class="text-gray-400 text-sm text-center">Aún no hay platillos.</p>';
-                return;
-            }
-
-            categories.forEach(category => {
-                const categoryHeader = document.createElement('h4');
-                categoryHeader.className = 'text-cyan-300 font-bold mt-3 border-b border-cyan-800 pb-1';
-                categoryHeader.textContent = category;
-                adminMenuList.appendChild(categoryHeader);
-
-                groupedMenu[category].forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'flex justify-between items-center bg-gray-800 p-2 rounded';
-                    div.innerHTML = `
-                        <span class="text-gray-300">${item.name} <span class="text-xs text-gray-400">(₡${item.price})</span></span>
-                        <button data-id="${item.id}" class="delete-menu-item-btn text-red-400 hover:text-red-600 text-xs font-bold">BORRAR</button>
-                    `;
-                    adminMenuList.appendChild(div);
-                });
-            });
-        }
-
-        menuForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = menuItemNameInput.value.trim();
-            const price = parseInt(menuItemPriceInput.value.trim(), 10);
-            const category = menuItemCategorySelect.value;
-            if (!name || isNaN(price) || !category) return;
-            
-            try {
-                await addDoc(collection(db, 'menu'), { name, price, category });
-                menuForm.reset();
-            } catch (error) {
-                console.error("Error adding menu item:", error);
-            }
-        });
-
-        adminMenuList.addEventListener('click', async (e) => {
-            if (e.target.classList.contains('delete-menu-item-btn')) {
-                const id = e.target.dataset.id;
-                showConfirm("Borrar Platillo", "¿Estás seguro?", async () => {
-                    try {
-                        await deleteDoc(doc(db, 'menu', id));
-                    } catch (error) {
-                        console.error("Error deleting menu item:", error);
-                    }
-                });
-            }
-        });
-
+        
         // --- Payment Modal Logic ---
         function calculateTotal(items) {
             return items.reduce((total, item) => {
@@ -931,7 +846,12 @@
             }
 
             printArea.innerHTML = `
-                <h1>Restaurante Regalo de Dios</h1>
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <img src="https://rhainaizblawiktjlwsv.supabase.co/storage/v1/object/public/logos/imagen_2025-10-10_160555537.png" alt="Logo" style="width: 80px; margin: 0 auto;"/>
+                </div>
+                <h1 style="margin-bottom: 5px;">Restaurante Regalo de Dios</h1>
+                <p style="text-align: center;">Tel: +506 6010 6552</p>
+                <p>----------------------------------------</p>
                 <p>Fecha: ${formattedDate}</p>
                 <p>Mesa: ${tableNumber}</p>
                 <ul>${itemsHtml}</ul>
@@ -949,9 +869,9 @@
             const itemsHtml = order.items.map(item => `<li>${item}</li>`).join('');
 
             printArea.innerHTML = `
-                <h1>COMANDA - Mesa ${order.tableNumber}</h1>
+                <h1 style="font-size: 16pt;">COMANDA - Mesa ${order.tableNumber}</h1>
                 <p>Hora: ${formattedDate}</p>
-                <ul>${itemsHtml}</ul>
+                <ul style="font-size: 11pt;">${itemsHtml}</ul>
             `;
             printArea.classList.remove('hidden');
             window.print();
@@ -965,7 +885,13 @@
             const topItemsHtml = Object.entries(itemCounts).sort(([,a],[,b]) => b-a).map(([name, count]) => `<li>${count}x - ${name}</li>`).join('');
 
             printArea.innerHTML = `
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <img src="https://rhainaizblawiktjlwsv.supabase.co/storage/v1/object/public/logos/imagen_2025-10-10_160555537.png" alt="Logo" style="width: 80px; margin: 0 auto;"/>
+                </div>
                 <h1>CIERRE DE CAJA (CORTE Z)</h1>
+                <p style="text-align: center;">Restaurante Regalo de Dios</p>
+                <p style="text-align: center;">Tel: +506 6010 6552</p>
+                <p>----------------------------------------</p>
                 <p>Fecha de Cierre: ${formattedDate}</p>
                 <p>----------------------------------------</p>
                 <p><strong>Venta Total del Día: ₡${totalSales.toLocaleString('es-CR')}</strong></p>
@@ -1191,7 +1117,7 @@
             onSnapshot(q, (snapshot) => {
                 const reports = [];
                 snapshot.forEach(doc => reports.push({ id: doc.id, ...doc.data() }));
-                reports.sort((a,b) => b.date.seconds - a.date.seconds); // Sort by most recent
+                reports.sort((a,b) => (b.date?.seconds || 0) - (a.date?.seconds || 0)); 
                 
                 pastReportsListEl.innerHTML = '';
                 if(reports.length === 0) {
@@ -1233,6 +1159,28 @@
             confirmModal.classList.add('hidden');
             confirmCallback = null;
         });
+        
+        async function seedMenuData() {
+            if (!db) return;
+            try {
+                const menuCollection = collection(db, 'menu');
+                const snapshot = await getDocs(query(menuCollection, limit(1)));
+
+                if (snapshot.empty) {
+                    console.log("Menu collection is empty. Seeding data...");
+                    const menuData = [
+                        { name: 'Típicos', price: 3500, category: 'Desayunos' },{ name: 'Desayuno Campesino', price: 3500, category: 'Desayunos' },{ name: 'Desayuno Delux', price: 4000, category: 'Desayunos' },{ name: 'Omelette (jamón, queso y espinaca)', price: 3200, category: 'Desayunos' },{ name: 'Tostadas Francesas', price: 3000, category: 'Desayunos' },{ name: 'Pancakes', price: 3000, category: 'Desayunos' },{ name: 'Fajitas (Pollo/Res)', price: 4000, category: 'Antojitos' },{ name: 'Quesadilla (Pollo/Carne)', price: 3700, category: 'Antojitos' },{ name: 'Quesadilla de Camarón', price: 4300, category: 'Antojitos' },{ name: 'Taco Tico de Carne', price: 3000, category: 'Antojitos' },{ name: 'Taco de la Casa (Mixto)', price: 5000, category: 'Antojitos' },{ name: 'Nachos (Carne/Pollo)', price: 3500, category: 'Antojitos' },{ name: 'Nachos Mixtos', price: 5000, category: 'Antojitos' },{ name: 'Papas Supremas (Pollo/Carne)', price: 3500, category: 'Antojitos' },{ name: 'Pollo Frito', price: 2500, category: 'Antojitos' },{ name: 'Bigorón', price: 3000, category: 'Antojitos' },{ name: 'Surtidas', price: 13500, category: 'Antojitos' },{ name: 'Sándwich de Carne', price: 3000, category: 'Antojitos' },{ name: 'Taco Grande con Papas', price: 3000, category: 'Antojitos' },{ name: 'Taco Pequeño con Papas', price: 2000, category: 'Antojitos' },{ name: 'Aliñadas', price: 3000, category: 'Antojitos' },{ name: 'Chorreadas', price: 4500, category: 'Antojitos' },{ name: 'Empanada Sencilla', price: 2000, category: 'Antojitos' },{ name: 'Empanada Arreglada', price: 2600, category: 'Antojitos' },{ name: 'Aros de Cebolla', price: 2000, category: 'Antojitos' },{ name: 'Chifrijo', price: 5000, category: 'Antojitos' },{ name: 'Nuggets de Pollo', price: 3500, category: 'Antojitos' },{ name: 'Dados de Pescado', price: 3500, category: 'Antojitos' },{ name: 'Patacones Arreglados', price: 3500, category: 'Antojitos' },{ name: 'Papas del Campo', price: 2000, category: 'Antojitos' },{ name: 'Papas Fritas', price: 1500, category: 'Antojitos' },{ name: 'Chicharrones', price: 4500, category: 'Antojitos' },{ name: 'Costilla a la BBQ', price: 7000, category: 'Antojitos' },{ name: 'Alitas de Pollo (6 pz)', price: 4500, category: 'Antojitos' },{ name: 'Alitas de Pollo (12 pz)', price: 8100, category: 'Antojitos' },{ name: 'Surtida Lux', price: 15000, category: 'Antojitos' },{ name: 'Parrillada Mixta', price: 9000, category: 'Antojitos' },{ name: 'Choripán', price: 5300, category: 'Antojitos' },{ name: 'Combo 1 (Hamb. Peq, Taco Peq, Papas)', price: 5000, category: 'Combos' },{ name: 'Combo 2 (Hot Dog, Taco, Papas)', price: 5000, category: 'Combos' },{ name: 'Casado Pechuga Pollo', price: 4000, category: 'Casados' },{ name: 'Casado Pescado', price: 4000, category: 'Casados' },{ name: 'Casado Chuleta', price: 4000, category: 'Casados' },{ name: 'Casado Carne en Salsa', price: 4000, category: 'Casados' },{ name: 'Casado Bistec', price: 4000, category: 'Casados' },{ name: 'Casado Pollo en Salsa', price: 4000, category: 'Casados' },{ name: 'Pechuga Pollo Parmesana', price: 5000, category: 'Platos Fuertes' },{ name: 'Pechuga Pollo a la Plancha', price: 5000, category: 'Platos Fuertes' },{ name: 'Arroz de la Casa', price: 5000, category: 'Platos Fuertes' },{ name: 'Arroz con Camarones', price: 5000, category: 'Platos Fuertes' },{ name: 'Churrasco', price: 7000, category: 'Platos Fuertes' },{ name: 'Costilla de Cerdo BBQ', price: 7000, category: 'Platos Fuertes' },{ name: 'Filete de Pescado', price: 5000, category: 'Platos Fuertes' },{ name: 'Pasta Alfredo', price: 5000, category: 'Platos Fuertes' },{ name: 'Pasta Boloñesa', price: 5000, category: 'Platos Fuertes' },{ name: 'Spaghetti con Camarones', price: 5000, category: 'Platos Fuertes' },{ name: 'Hamb. Pollo Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Pollo Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Hamb. Torta de Carne Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Torta de Carne Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Hamb. Carne Desmechada Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Carne Desmechada Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Gallo de Papa', price: 1500, category: 'Gallos' },{ name: 'Gallo de Pollo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Carne', price: 1500, category: 'Gallos' },{ name: 'Gallo de Salchichón', price: 1500, category: 'Gallos' },{ name: 'Gallo de Torta de Huevo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Carne en Salsa', price: 1500, category: 'Gallos' },{ name: 'Gallo de Chorizo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Pescado', price: 1500, category: 'Gallos' },{ name: 'Nuggets (Niños)', price: 3000, category: 'Menú Niños' },{ name: 'Mini Hamburguesa', price: 2000, category: 'Menú Niños' },{ name: 'Mini Quesadilla', price: 2000, category: 'Menú Niños' },{ name: 'Mini Sándwich', price: 2500, category: 'Menú Niños' },{ name: 'Batido en Agua', price: 1500, category: 'Bebidas' },{ name: 'Batido en Leche', price: 2000, category: 'Bebidas' },{ name: 'Pepsi 600 ml', price: 1000, category: 'Bebidas' },{ name: 'Tropical', price: 1000, category: 'Bebidas' },{ name: 'Pepsi 2.5 L', price: 1700, category: 'Bebidas' },{ name: 'Tropical 2.5 L', price: 1700, category: 'Bebidas' },{ name: 'Capuchino', price: 2500, category: 'Bebidas' },{ name: 'Café', price: 1500, category: 'Bebidas' },{ name: 'Chocolate', price: 1500, category: 'Bebidas' },{ name: 'Agua Dulce', price: 1000, category: 'Bebidas' },{ name: 'Leche', price: 1200, category: 'Bebidas' }
+                    ];
+                    
+                    const addPromises = menuData.map(item => addDoc(menuCollection, item));
+                    await Promise.all(addPromises);
+                    console.log("Menu data seeded successfully.");
+                }
+            } catch (error) {
+                console.error("Error seeding menu data:", error);
+            }
+        }
+
     </script>
 </body>
 </html>
