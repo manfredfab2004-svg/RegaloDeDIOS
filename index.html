@@ -116,6 +116,12 @@
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
+    
+    <!-- Banner de Notificación en Página -->
+    <div id="notification-banner" class="hidden fixed top-5 right-5 bg-green-500 text-white p-4 rounded-lg shadow-lg z-[100] transform translate-x-full transition-transform duration-300">
+        <p class="font-bold text-lg">¡Pedido Listo!</p>
+        <p id="notification-message"></p>
+    </div>
 
     <!-- Pantalla de Contraseña -->
     <div id="password-modal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
@@ -452,9 +458,9 @@
 
 
         let db, auth;
-        let currentUserPassword = '1234'; 
+        let currentUserPassword = '0000'; 
+        let previousOrders = []; 
         
-        // --- TU PROPIA CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyC7OIars9qrTeZo3-tFxqCeGwTA5CmZeng",
             authDomain: "posdeventaregalodedios.firebaseapp.com",
@@ -464,8 +470,6 @@
             appId: "1:883274283691:web:ed88029e2faf58245c55ee",
             measurementId: "G-WD5KPNQRPC"
         };
-        
-        // --- Lógica de la Aplicación ---
         
         passwordForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -543,6 +547,7 @@
             listenToDailyReports();
             initializeCalculator();
             initializeCalendar();
+            requestNotificationPermission();
         }
 
         function populateTableNumbers() {
@@ -621,9 +626,13 @@
             const q = query(collection(db, 'orders'));
 
             onSnapshot(q, (snapshot) => {
-                let orders = [];
-                snapshot.forEach(doc => orders.push({ id: doc.id, ...doc.data() }));
-                renderAllOrders(orders);
+                let currentOrders = [];
+                snapshot.forEach(doc => currentOrders.push({ id: doc.id, ...doc.data() }));
+                
+                checkForReadyOrders(previousOrders, currentOrders);
+                previousOrders = currentOrders;
+
+                renderAllOrders(currentOrders);
             }, (error) => {
                 console.error("Error al escuchar pedidos:", error);
             });
@@ -1246,7 +1255,7 @@
                 if (snapshot.empty) {
                     console.log("Menu collection is empty. Seeding data...");
                     const menuData = [
-                        { name: 'Típicos', price: 3500, category: 'Desayunos' },{ name: 'Desayuno Campesino', price: 3500, category: 'Desayunos' },{ name: 'Desayuno Delux', price: 4000, category: 'Desayunos' },{ name: 'Omelette (jamón, queso y espinaca)', price: 3200, category: 'Desayunos' },{ name: 'Tostadas Francesas', price: 3000, category: 'Desayunos' },{ name: 'Pancakes', price: 3000, category: 'Desayunos' },{ name: 'Fajitas (Pollo/Res)', price: 4000, category: 'Antojitos' },{ name: 'Quesadilla (Pollo/Carne)', price: 3700, category: 'Antojitos' },{ name: 'Quesadilla de Camarón', price: 4300, category: 'Antojitos' },{ name: 'Taco Tico de Carne', price: 3000, category: 'Antojitos' },{ name: 'Taco de la Casa (Mixto)', price: 5000, category: 'Antojitos' },{ name: 'Nachos (Carne/Pollo)', price: 3500, category: 'Antojitos' },{ name: 'Nachos Mixtos', price: 5000, category: 'Antojitos' },{ name: 'Papas Supremas (Pollo/Carne)', price: 3500, category: 'Antojitos' },{ name: 'Pollo Frito', price: 2500, category: 'Antojitos' },{ name: 'Bigorón', price: 3000, category: 'Antojitos' },{ name: 'Surtidas', price: 13500, category: 'Antojitos' },{ name: 'Sándwich de Carne', price: 3000, category: 'Antojitos' },{ name: 'Taco Grande con Papas', price: 3000, category: 'Antojitos' },{ name: 'Taco Pequeño con Papas', price: 2000, category: 'Antojitos' },{ name: 'Aliñadas', price: 3000, category: 'Antojitos' },{ name: 'Chorreadas', price: 4500, category: 'Antojitos' },{ name: 'Empanada Sencilla', price: 2000, category: 'Antojitos' },{ name: 'Empanada Arreglada', price: 2600, category: 'Antojitos' },{ name: 'Aros de Cebolla', price: 2000, category: 'Antojitos' },{ name: 'Chifrijo', price: 5000, category: 'Antojitos' },{ name: 'Nuggets de Pollo', price: 3500, category: 'Antojitos' },{ name: 'Dados de Pescado', price: 3500, category: 'Antojitos' },{ name: 'Patacones Arreglados', price: 3500, category: 'Antojitos' },{ name: 'Papas del Campo', price: 2000, category: 'Antojitos' },{ name: 'Papas Fritas', price: 1500, category: 'Antojitos' },{ name: 'Chicharrones', price: 4500, category: 'Antojitos' },{ name: 'Costilla a la BBQ', price: 7000, category: 'Antojitos' },{ name: 'Alitas de Pollo (6 pz)', price: 4500, category: 'Antojitos' },{ name: 'Alitas de Pollo (12 pz)', price: 8100, category: 'Antojitos' },{ name: 'Surtida Lux', price: 15000, category: 'Antojitos' },{ name: 'Parrillada Mixta', price: 9000, category: 'Antojitos' },{ name: 'Choripán', price: 5300, category: 'Antojitos' },{ name: 'Combo 1 (Hamb. Peq, Taco Peq, Papas)', price: 5000, category: 'Combos' },{ name: 'Combo 2 (Hot Dog, Taco, Papas)', price: 5000, category: 'Combos' },{ name: 'Casado Pechuga Pollo', price: 4000, category: 'Casados' },{ name: 'Casado Pescado', price: 4000, category: 'Casados' },{ name: 'Casado Chuleta', price: 4000, category: 'Casados' },{ name: 'Casado Carne en Salsa', price: 4000, category: 'Casados' },{ name: 'Casado Bistec', price: 4000, category: 'Casados' },{ name: 'Casado Pollo en Salsa', price: 4000, category: 'Casados' },{ name: 'Pechuga Pollo Parmesana', price: 5000, category: 'Platos Fuertes' },{ name: 'Pechuga Pollo a la Plancha', price: 5000, category: 'Platos Fuertes' },{ name: 'Arroz de la Casa', price: 5000, category: 'Platos Fuertes' },{ name: 'Arroz con Camarones', price: 5000, category: 'Platos Fuertes' },{ name: 'Churrasco', price: 7000, category: 'Platos Fuertes' },{ name: 'Costilla de Cerdo BBQ', price: 7000, category: 'Platos Fuertes' },{ name: 'Filete de Pescado', price: 5000, category: 'Platos Fuertes' },{ name: 'Pasta Alfredo', price: 5000, category: 'Platos Fuertes' },{ name: 'Pasta Boloñesa', price: 5000, category: 'Platos Fuertes' },{ name: 'Spaghetti con Camarones', price: 5000, category: 'Platos Fuertes' },{ name: 'Hamb. Pollo Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Pollo Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Hamb. Torta de Carne Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Torta de Carne Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Hamb. Carne Desmechada Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Carne Desmechada Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Gallo de Papa', price: 1500, category: 'Gallos' },{ name: 'Gallo de Pollo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Carne', price: 1500, category: 'Gallos' },{ name: 'Gallo de Salchichón', price: 1500, category: 'Gallos' },{ name: 'Gallo de Torta de Huevo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Carne en Salsa', price: 1500, category: 'Gallos' },{ name: 'Gallo de Chorizo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Pescado', price: 1500, category: 'Gallos' },{ name: 'Nuggets (Niños)', price: 3000, category: 'Menú Niños' },{ name: 'Mini Hamburguesa', price: 2000, category: 'Menú Niños' },{ name: 'Mini Quesadilla', price: 2000, category: 'Menú Niños' },{ name: 'Mini Sándwich', price: 2500, category: 'Menú Niños' },{ name: 'Batido en Agua', price: 1500, category: 'Bebidas' },{ name: 'Batido en Leche', price: 2000, category: 'Bebidas' },{ name: 'Pepsi 600 ml', price: 1000, category: 'Bebidas' },{ name: 'Tropical', price: 1000, category: 'Bebidas' },{ name: 'Pepsi 2.5 L', price: 1700, category: 'Bebidas' },{ name: 'Tropical 2.5 L', price: 1700, category: 'Bebidas' },{ name: 'Capuchino', price: 2500, category: 'Bebidas' },{ name: 'Café', price: 1500, category: 'Bebidas' },{ name: 'Chocolate', price: 1500, category: 'Bebidas' },{ name: 'Agua Dulce', price: 1000, category: 'Bebidas' },{ name: 'Leche', price: 1200, category: 'Bebidas' }
+                        { name: 'Típicos', price: 3500, category: 'Desayunos' },{ name: 'Desayuno Campesino', price: 3500, category: 'Desayunos' },{ name: 'Desayuno Delux', price: 4000, category: 'Desayunos' },{ name: 'Omelette (jamón, queso y espinaca)', price: 3200, category: 'Desayunos' },{ name: 'Tostadas Francesas', price: 3000, category: 'Desayunos' },{ name: 'Pancakes', price: 3000, category: 'Desayunos' },{ name: 'Fajitas (Pollo/Res)', price: 4000, category: 'Antojitos' },{ name: 'Quesadilla (Pollo/Carne)', price: 3700, category: 'Antojitos' },{ name: 'Quesadilla de Camarón', price: 4300, category: 'Antojitos' },{ name: 'Taco Tico de Carne', price: 3000, category: 'Antojitos' },{ name: 'Taco de la Casa (Mixto)', price: 5000, category: 'Antojitos' },{ name: 'Nachos (Carne/Pollo)', price: 3500, category: 'Antojitos' },{ name: 'Nachos Mixtos', price: 5000, category: 'Antojitos' },{ name: 'Papas Supremas (Pollo/Carne)', price: 3500, category: 'Antojitos' },{ name: 'Pollo Frito', price: 2500, category: 'Antojitos' },{ name: 'Bigorón', price: 3000, category: 'Antojitos' },{ name: 'Surtidas', price: 13500, category: 'Antojitos' },{ name: 'Sándwich de Carne', price: 3000, category: 'Antojitos' },{ name: 'Taco Grande con Papas', price: 3000, category: 'Antojitos' },{ name: 'Taco Pequeño con Papas', price: 2000, category: 'Antojitos' },{ name: 'Aliñadas', price: 3000, category: 'Antojitos' },{ name: 'Chorreadas', price: 4500, category: 'Antojitos' },{ name: 'Empanada Sencilla', price: 2000, category: 'Antojitos' },{ name: 'Empanada Arreglada', price: 2600, category: 'Antojitos' },{ name: 'Aros de Cebolla', price: 2000, category: 'Antojitos' },{ name: 'Chifrijo', price: 5000, category: 'Antojitos' },{ name: 'Nuggets de Pollo', price: 3500, category: 'Antojitos' },{ name: 'Dados de Pescado', price: 3500, category: 'Antojitos' },{ name: 'Patacones Arreglados', price: 3500, category: 'Antojitos' },{ name: 'Papas del Campo', price: 2000, category: 'Antojitos' },{ name: 'Papas Fritas', price: 1500, category: 'Antojitos' },{ name: 'Chicharrones', price: 4500, category: 'Antojitos' },{ name: 'Costilla a la BBQ', price: 7000, category: 'Antojitos' },{ name: 'Alitas de Pollo (6 pz)', price: 4500, category: 'Antojitos' },{ name: 'Alitas de Pollo (12 pz)', price: 8100, category: 'Antojitos' },{ name: 'Surtida Lux', price: 15000, category: 'Antojitos' },{ name: 'Parrillada Mixta', price: 9000, category: 'Antojitos' },{ name: 'Choripán', price: 5300, category: 'Antojitos' },{ name: 'Combo 1 (Hamb. Peq, Taco Peq, Papas)', price: 5000, category: 'Combos' },{ name: 'Combo 2 (Hot Dog, Taco, Papas)', price: 5000, category: 'Combos' },{ name: 'Casado Pechuga Pollo', price: 4000, category: 'Casados' },{ name: 'Casado Pescado', price: 4000, category: 'Casados' },{ name: 'Casado Chuleta', price: 4000, category: 'Casados' },{ name: 'Casado Carne en Salsa', price: 4000, category: 'Casados' },{ name: 'Casado Bistec', price: 4000, category: 'Casados' },{ name: 'Casado Pollo en Salsa', price: 4000, category: 'Casados' },{ name: 'Pechuga Pollo Parmesana', price: 5000, category: 'Platos Fuertes' },{ name: 'Pechuga Pollo a la Plancha', price: 5000, category: 'Platos Fuertes' },{ name: 'Arroz de la Casa', price: 5000, category: 'Platos Fuertes' },{ name: 'Arroz con Camarones', price: 5000, category: 'Platos Fuertes' },{ name: 'Churrasco', price: 7000, category: 'Platos Fuertes' },{ name: 'Costilla de Cerdo BBQ', price: 7000, category: 'Platos Fuertes' },{ name: 'Filete de Pescado', price: 5000, category: 'Platos Fuertes' },{ name: 'Pasta Alfredo', price: 5000, category: 'Platos Fuertes' },{ name: 'Pasta Boloñesa', price: 5000, category: 'Platos Fuertes' },{ name: 'Spaghetti con Camarones', price: 5000, category: 'Platos Fuertes' },{ name: 'Hamb. Pollo Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Pollo Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Hamb. Torta de Carne Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Torta de Carne Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Hamb. Carne Desmechada Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Carne Desmechada Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Gallo de Papa', price: 1500, category: 'Gallos' },{ name: 'Gallo de Pollo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Carne', price: 1500, category: 'Gallos' },{ name: 'Gallo de Salchichón', price: 1500, category: 'Gallos' },{ name: 'Gallo de Torta de Huevo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Carne en Salsa', price: 1500, category: 'Gallos' },{ name: 'Gallo de Chorizo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Pescado', price: 1500, category: 'Gallos' },{ name: 'Nuggets (Niños)', price: 3000, category: 'Menú Niños' },{ name: 'Mini Hamburguesa', price: 2000, category: 'Menú Niños' },{ name: 'Mini Quesadilla', price: 2000, category: 'Menú Niños' },{ name: 'Mini Sándwich', price: 2500, category: 'Menú Niños' },{ name: 'Batido en Agua', price: 1500, category: 'Bebidas' },{ name: 'Batido en Leche', price: 2000, category: 'Bebidas' },{ name: 'Pepsi 600 ml', price: 1000, category: 'Bebidas' },{ name: 'Tropical', price: 1000, category: 'Bebidas' },{ name: 'Pepsi 2.5 L', price: 1700, category: 'Bebidas' },{ name: 'Tropical 2.5 L', price: 1700, category: 'Bebidas' },{ name: 'Capuchino', price: 2500, category: 'Bebidas' },{ name: 'Café', price: 1000, category: 'Bebidas' },{ name: 'Café con Leche', price: 1500, category: 'Bebidas' },{ name: 'Chocolate', price: 1500, category: 'Bebidas' },{ name: 'Agua Dulce', price: 1000, category: 'Bebidas' },{ name: 'Leche', price: 1200, category: 'Bebidas' }
                     ];
                     
                     const addPromises = menuData.map(item => addDoc(menuCollection, item));
@@ -1391,7 +1400,50 @@
                 renderCalendar();
             });
         }
+        
+        // --- Notification Logic ---
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted.');
+                    }
+                });
+            }
+        }
+
+        function checkForReadyOrders(oldOrders, newOrders) {
+            newOrders.forEach(newOrder => {
+                const oldOrder = oldOrders.find(o => o.id === newOrder.id);
+                if (newOrder.status === 'Listo' && oldOrder && oldOrder.status !== 'Listo') {
+                    showNotification(`Mesa ${newOrder.tableNumber} está lista!`);
+                }
+            });
+        }
+
+        function showNotification(message) {
+            if (Notification.permission === 'granted') {
+                new Notification('¡Pedido Listo!', {
+                    body: message,
+                    icon: 'https://rhainaizblawiktjlwsv.supabase.co/storage/v1/object/public/logos/imagen_2025-10-10_160555537.png'
+                });
+            }
+
+            const notificationBanner = document.getElementById('notification-banner');
+            const notificationMessage = document.getElementById('notification-message');
+            notificationMessage.textContent = message;
+            notificationBanner.classList.remove('hidden');
+            notificationBanner.style.transform = 'translateX(0)';
+            
+            setTimeout(() => {
+                notificationBanner.style.transform = 'translateX(120%)';
+                 setTimeout(() => {
+                    notificationBanner.classList.add('hidden');
+                }, 300);
+            }, 5000);
+        }
 
     </script>
 </body>
 </html>
+
