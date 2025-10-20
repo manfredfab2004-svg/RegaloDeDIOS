@@ -113,6 +113,31 @@
             #print-area p { margin: 2px 0; }
             #print-area ul { list-style-type: none; padding: 5px 0; margin: 5px 0; border-top: 1px dashed #000; border-bottom: 1px dashed #000; }
         }
+         /* Estilos para las mesas */
+        .table-btn {
+            background-color: rgba(0, 188, 212, 0.2);
+            color: #00bcd4;
+            border: 1px solid rgba(0, 188, 212, 0.4);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        .table-btn:hover:not(:disabled) {
+            background-color: rgba(0, 188, 212, 0.4);
+        }
+        .table-btn.selected {
+            background-color: #00bcd4;
+            color: white;
+            box-shadow: 0 0 15px rgba(0, 188, 212, 0.6);
+            transform: scale(1.05);
+        }
+        .table-btn.occupied {
+            background-color: rgba(255, 82, 82, 0.4);
+            color: #ff5252;
+            border-color: rgba(255, 82, 82, 0.6);
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -252,8 +277,8 @@
                         <h2 class="text-3xl font-bold mb-6 text-center text-cyan-400">Crear Nuevo Pedido</h2>
                         <form id="orderForm" class="space-y-6">
                             <div>
-                                <label for="tableNumber" class="block text-sm font-medium text-blue-200 mb-1">Número de Mesa</label>
-                                <select id="tableNumber" required class="w-full bg-gray-700 text-white rounded-md p-3"></select>
+                                <label class="block text-sm font-medium text-blue-200 mb-1">Seleccionar Mesa</label>
+                                <div id="table-selection-grid" class="grid grid-cols-5 gap-2 mt-2"></div>
                             </div>
                             <div>
                                 <label for="orderItems" class="block text-sm font-medium text-blue-200 mb-1">Artículos del Pedido</label>
@@ -277,7 +302,14 @@
                 </div>
                 <div class="lg:col-span-3">
                      <div class="form-panel p-8 rounded-lg">
-                        <h3 class="text-3xl font-bold mb-6 text-center text-cyan-400">Estado de Mesas Activas</h3>
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-3xl font-bold text-cyan-400">Estado de Mesas Activas</h3>
+                            <button id="deleteAllActiveOrdersBtn" class="bg-red-800 text-white p-2 rounded-full hover:bg-red-900 transition-colors" title="Borrar todos los pedidos activos">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
                         <div id="cashierOrders" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
                     </div>
                 </div>
@@ -400,12 +432,13 @@
         const showCalendarViewBtn = document.getElementById('showCalendarViewBtn');
 
         const orderForm = document.getElementById('orderForm');
-        const tableNumberSelect = document.getElementById('tableNumber');
+        const tableSelectionGrid = document.getElementById('table-selection-grid');
         const orderItemsTextarea = document.getElementById('orderItems');
         const kitchenOrdersContainer = document.getElementById('kitchenOrders');
         const cashierOrdersContainer = document.getElementById('cashierOrders');
         const historyOrdersContainer = document.getElementById('historyOrders');
         const deleteAllHistoryBtn = document.getElementById('deleteAllHistoryBtn');
+        const deleteAllActiveOrdersBtn = document.getElementById('deleteAllActiveOrdersBtn');
         
         const adminPanel = document.getElementById('admin-panel');
         const adminDaysInput = document.getElementById('admin-days-input');
@@ -456,10 +489,10 @@
         const eventTextInput = document.getElementById('event-text');
         const cancelEventBtn = document.getElementById('cancel-event-btn');
 
-
         let db, auth;
-        let currentUserPassword = '0000'; 
+        let currentUserPassword = '5555';
         let previousOrders = []; 
+        let selectedTable = null;
         
         const firebaseConfig = {
             apiKey: "AIzaSyC7OIars9qrTeZo3-tFxqCeGwTA5CmZeng",
@@ -478,7 +511,7 @@
                 passwordModal.classList.add('hidden');
                 mainContainer.classList.remove('hidden');
                 initializeFirebase();
-            } else if (password === '2004') {
+            } else if (password === '8873') {
                 passwordModal.classList.add('hidden');
                 adminPanel.classList.remove('hidden');
                  if (!db) initializeFirebase();
@@ -537,7 +570,7 @@
         }
 
         function initializeApplication() {
-            populateTableNumbers();
+            initializeTableSelection();
             switchView('cashier');
             updateClock();
             setInterval(updateClock, 1000);
@@ -550,14 +583,25 @@
             requestNotificationPermission();
         }
 
-        function populateTableNumbers() {
-            tableNumberSelect.innerHTML = '';
+        function initializeTableSelection() {
+            tableSelectionGrid.innerHTML = '';
             for (let i = 1; i <= 20; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = `Mesa ${i}`;
-                tableNumberSelect.appendChild(option);
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'table-btn';
+                button.textContent = i;
+                button.dataset.tableNumber = i;
+                tableSelectionGrid.appendChild(button);
             }
+
+            tableSelectionGrid.addEventListener('click', (e) => {
+                const target = e.target.closest('.table-btn');
+                if (target && !target.disabled) {
+                    document.querySelectorAll('.table-btn').forEach(btn => btn.classList.remove('selected'));
+                    target.classList.add('selected');
+                    selectedTable = parseInt(target.dataset.tableNumber);
+                }
+            });
         }
         
         function switchView(view) {
@@ -600,25 +644,43 @@
 
         async function submitOrder(print = false) {
             const items = orderItemsTextarea.value.trim().split('\n').filter(Boolean);
-            if (items.length === 0) return;
-            const tableNumber = parseInt(tableNumberSelect.value);
+            if (!selectedTable) {
+                alert("Por favor, seleccione una mesa.");
+                return;
+            }
+            if (items.length === 0) {
+                 alert("Por favor, añada artículos al pedido.");
+                return;
+            }
+            
+            sendToKitchenBtn.disabled = true;
+            printAndSendBtn.disabled = true;
+            sendToKitchenBtn.textContent = 'Enviando...';
+            printAndSendBtn.textContent = 'Enviando...';
 
             if(print) {
-                const tempOrder = { tableNumber, items };
+                const tempOrder = { tableNumber: selectedTable, items };
                 printKitchenTicket(tempOrder);
             }
 
             try {
                 await addDoc(collection(db, 'orders'), {
-                    tableNumber,
+                    tableNumber: selectedTable,
                     items,
                     status: 'En espera',
                     createdAt: serverTimestamp(),
                     closedAt: null
                 });
                 orderItemsTextarea.value = '';
+                selectedTable = null;
+                document.querySelectorAll('.table-btn').forEach(btn => btn.classList.remove('selected'));
             } catch (error) {
                 console.error("Error al añadir pedido:", error);
+            } finally {
+                sendToKitchenBtn.disabled = false;
+                printAndSendBtn.disabled = false;
+                sendToKitchenBtn.textContent = 'Enviar a Cocina';
+                printAndSendBtn.textContent = 'Imprimir y Enviar';
             }
         }
 
@@ -646,6 +708,19 @@
             const activeOrders = orders.filter(o => o.status !== 'Cerrado');
             const closedOrders = orders.filter(o => o.status === 'Cerrado');
             
+            const occupiedTables = new Set(activeOrders.map(o => o.tableNumber));
+            document.querySelectorAll('.table-btn').forEach(btn => {
+                const tableNum = parseInt(btn.dataset.tableNumber);
+                if(occupiedTables.has(tableNum)) {
+                    btn.classList.add('occupied');
+                    btn.disabled = true;
+                } else {
+                    btn.classList.remove('occupied');
+                    btn.disabled = false;
+                }
+            });
+
+
             if (activeOrders.length > 0) {
                  activeOrders.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)); 
                 activeOrders.forEach(order => {
@@ -769,6 +844,19 @@
                 await Promise.all(deletePromises);
             });
         });
+
+        deleteAllActiveOrdersBtn.addEventListener('click', () => {
+            showConfirm("Borrar Pedidos Activos", "¿Estás seguro de que quieres borrar TODOS los pedidos activos? Esta acción no se puede deshacer.", async () => {
+                const q = query(collection(db, "orders"), where("status", "!=", "Cerrado"));
+                const querySnapshot = await getDocs(q);
+                const deletePromises = [];
+                querySnapshot.forEach((doc) => {
+                    deletePromises.push(deleteDoc(doc.ref));
+                });
+                await Promise.all(deletePromises);
+            });
+        });
+
 
         // --- Menu Logic ---
         function listenToMenu() {
@@ -1096,7 +1184,6 @@
                     if (distance < 0) {
                         clearInterval(countdownInterval);
                         countdownTimerEl.innerHTML = "¡Finalizado!";
-                        currentUserPassword = '8873';
                         return;
                     }
                     const d = Math.floor(distance / 86400000), h = Math.floor((distance % 86400000) / 3600000), m = Math.floor((distance % 3600000) / 60000), s = Math.floor((distance % 60000) / 1000);
