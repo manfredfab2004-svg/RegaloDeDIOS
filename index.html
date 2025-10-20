@@ -53,21 +53,21 @@
             border: 1px solid rgba(0, 188, 212, 0.3);
         }
         .view-button.active {
-            background-color: #00bcd4;
+            background-color: #D9534F; /* Color festivo */
             color: white;
-            box-shadow: 0 0 15px rgba(0, 188, 212, 0.6);
+            box-shadow: 0 0 15px rgba(217, 83, 79, 0.6);
         }
         .view-button:hover:not(.active) {
             background-color: rgba(0, 188, 212, 0.2);
         }
 
         .primary-btn {
-            background-color: #00bcd4;
+            background-color: #D9534F; /* Color festivo */
             color: white;
             transition: all 0.2s ease;
         }
         .primary-btn:hover {
-            background-color: #00e5ff;
+            background-color: #C9302C;
         }
         .primary-btn:disabled {
             background-color: #5a5a5a;
@@ -138,6 +138,34 @@
             border-color: rgba(255, 82, 82, 0.6);
             cursor: not-allowed;
         }
+        
+        /* Animación de nieve */
+        #snowflake-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .snowflake {
+            color: #fff;
+            font-size: 1em;
+            font-family: Arial, sans-serif;
+            text-shadow: 0 0 5px #000;
+            position: absolute;
+            top: -10%;
+            z-index: 1;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(105vh);
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -150,15 +178,18 @@
 
     <!-- Pantalla de Contraseña -->
     <div id="password-modal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-        <div id="password-box" class="modal-panel p-8 rounded-lg text-center w-full max-w-sm">
-            <img src="https://rhainaizblawiktjlwsv.supabase.co/storage/v1/object/public/logos/imagen_2025-10-10_160555537.png" alt="Logo Regalo de Dios" class="mx-auto h-24 w-24 object-contain rounded-full shadow-md mb-6">
-            <h2 class="text-2xl font-bold mb-4 text-white">Ingresar Contraseña</h2>
-            <form id="password-form">
-                <input type="password" id="password-input" class="w-full p-3 rounded-md text-center bg-gray-700 text-white" placeholder="********">
-                <p id="error-message" class="text-red-400 text-sm mt-2 hidden">Contraseña incorrecta.</p>
-                <button type="submit" class="w-full primary-btn py-3 rounded-md text-lg font-semibold mt-6">Acceder</button>
-            </form>
-            <p class="login-watermark mt-4">CREADO POR FABIAN CARVAJAL</p>
+        <div id="password-box" class="modal-panel p-8 rounded-lg text-center w-full max-w-sm relative overflow-hidden">
+            <div id="snowflake-container"></div>
+            <div class="relative z-10">
+                <img src="https://rhainaizblawiktjlwsv.supabase.co/storage/v1/object/public/logos/imagen_2025-10-10_160555537.png" alt="Logo Regalo de Dios" class="mx-auto h-24 w-24 object-contain rounded-full shadow-md mb-6">
+                <h2 class="text-2xl font-bold mb-4 text-white">Ingresar Contraseña</h2>
+                <form id="password-form">
+                    <input type="password" id="password-input" class="w-full p-3 rounded-md text-center bg-gray-700 text-white" placeholder="********">
+                    <p id="error-message" class="text-red-400 text-sm mt-2 hidden">Contraseña incorrecta.</p>
+                    <button type="submit" class="w-full primary-btn py-3 rounded-md text-lg font-semibold mt-6">Acceder</button>
+                </form>
+                <p class="login-watermark mt-4">CREADO POR FABIAN CARVAJAL</p>
+            </div>
         </div>
     </div>
 
@@ -490,7 +521,6 @@
         const cancelEventBtn = document.getElementById('cancel-event-btn');
 
         let db, auth;
-        let currentUserPassword = '5555';
         let previousOrders = []; 
         let selectedTable = null;
         
@@ -504,10 +534,26 @@
             measurementId: "G-WD5KPNQRPC"
         };
         
+        document.addEventListener('DOMContentLoaded', () => {
+            const snowflakeContainer = document.getElementById('snowflake-container');
+            const snowflakeCount = 50;
+            for (let i = 0; i < snowflakeCount; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.className = 'snowflake';
+                snowflake.innerHTML = '❄';
+                snowflake.style.left = `${Math.random() * 100}vw`;
+                snowflake.style.animationDuration = `${Math.random() * 5 + 5}s`;
+                snowflake.style.animationDelay = `${Math.random() * 5}s`;
+                snowflake.style.opacity = Math.random();
+                snowflake.style.fontSize = `${Math.random() * 1.5 + 0.5}em`;
+                snowflakeContainer.appendChild(snowflake);
+            }
+        });
+        
         passwordForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const password = passwordInput.value;
-            if (password === currentUserPassword) {
+            if (password === '5555') {
                 passwordModal.classList.add('hidden');
                 mainContainer.classList.remove('hidden');
                 initializeFirebase();
