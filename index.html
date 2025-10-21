@@ -197,14 +197,35 @@
     <div id="admin-panel" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
         <div class="modal-panel p-8 rounded-lg w-full max-w-md">
             <h2 class="text-2xl font-bold mb-6 text-white text-center">Panel de Administrador</h2>
-            <div class="space-y-4">
-                <label for="admin-days-input" class="block text-sm font-medium text-blue-200">Días para ajustar el temporizador:</label>
-                <input type="number" id="admin-days-input" class="w-full p-3 rounded-md bg-gray-700 text-white" placeholder="Ej: 10">
-                <div class="flex space-x-4">
-                    <button id="add-days-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-md font-semibold">Añadir Días</button>
-                    <button id="remove-days-btn" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white py-2 rounded-md font-semibold">Quitar Días</button>
+            <div class="space-y-6">
+                <!-- Days -->
+                <div class="space-y-2">
+                    <label for="admin-days-input" class="block text-sm font-medium text-blue-200">Ajustar Días:</label>
+                    <div class="flex space-x-2">
+                        <input type="number" id="admin-days-input" class="w-full p-2 rounded-md bg-gray-700 text-white" placeholder="Ej: 1">
+                        <button id="add-days-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-semibold">+</button>
+                        <button id="remove-days-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md font-semibold">-</button>
+                    </div>
                 </div>
-                <p id="admin-feedback" class="text-green-400 text-sm mt-2 h-4 text-center"></p>
+                <!-- Hours -->
+                <div class="space-y-2">
+                    <label for="admin-hours-input" class="block text-sm font-medium text-blue-200">Ajustar Horas:</label>
+                    <div class="flex space-x-2">
+                        <input type="number" id="admin-hours-input" class="w-full p-2 rounded-md bg-gray-700 text-white" placeholder="Ej: 12">
+                        <button id="add-hours-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-semibold">+</button>
+                        <button id="remove-hours-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md font-semibold">-</button>
+                    </div>
+                </div>
+                <!-- Minutes -->
+                 <div class="space-y-2">
+                    <label for="admin-minutes-input" class="block text-sm font-medium text-blue-200">Ajustar Minutos:</label>
+                    <div class="flex space-x-2">
+                        <input type="number" id="admin-minutes-input" class="w-full p-2 rounded-md bg-gray-700 text-white" placeholder="Ej: 30">
+                        <button id="add-minutes-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-semibold">+</button>
+                        <button id="remove-minutes-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md font-semibold">-</button>
+                    </div>
+                </div>
+                <p id="admin-feedback" class="text-green-400 text-sm pt-2 h-6 text-center"></p>
             </div>
             <button id="admin-logout-btn" class="w-full bg-gray-700 text-cyan-400 hover:bg-gray-600 py-2 mt-8 rounded-md font-semibold border border-cyan-400">Volver</button>
         </div>
@@ -475,6 +496,12 @@
         const adminDaysInput = document.getElementById('admin-days-input');
         const addDaysBtn = document.getElementById('add-days-btn');
         const removeDaysBtn = document.getElementById('remove-days-btn');
+        const adminHoursInput = document.getElementById('admin-hours-input');
+        const addHoursBtn = document.getElementById('add-hours-btn');
+        const removeHoursBtn = document.getElementById('remove-hours-btn');
+        const adminMinutesInput = document.getElementById('admin-minutes-input');
+        const addMinutesBtn = document.getElementById('add-minutes-btn');
+        const removeMinutesBtn = document.getElementById('remove-minutes-btn');
         const adminLogoutBtn = document.getElementById('admin-logout-btn');
         const adminFeedback = document.getElementById('admin-feedback');
 
@@ -520,6 +547,7 @@
         const eventTextInput = document.getElementById('event-text');
         const cancelEventBtn = document.getElementById('cancel-event-btn');
 
+
         let db, auth;
         let previousOrders = []; 
         let selectedTable = null;
@@ -536,17 +564,19 @@
         
         document.addEventListener('DOMContentLoaded', () => {
             const snowflakeContainer = document.getElementById('snowflake-container');
-            const snowflakeCount = 50;
-            for (let i = 0; i < snowflakeCount; i++) {
-                const snowflake = document.createElement('div');
-                snowflake.className = 'snowflake';
-                snowflake.innerHTML = '❄';
-                snowflake.style.left = `${Math.random() * 100}vw`;
-                snowflake.style.animationDuration = `${Math.random() * 5 + 5}s`;
-                snowflake.style.animationDelay = `${Math.random() * 5}s`;
-                snowflake.style.opacity = Math.random();
-                snowflake.style.fontSize = `${Math.random() * 1.5 + 0.5}em`;
-                snowflakeContainer.appendChild(snowflake);
+            if (snowflakeContainer) {
+                const snowflakeCount = 50;
+                for (let i = 0; i < snowflakeCount; i++) {
+                    const snowflake = document.createElement('div');
+                    snowflake.className = 'snowflake';
+                    snowflake.innerHTML = '❄';
+                    snowflake.style.left = `${Math.random() * 100}vw`;
+                    snowflake.style.animationDuration = `${Math.random() * 5 + 5}s`;
+                    snowflake.style.animationDelay = `${Math.random() * 5}s`;
+                    snowflake.style.opacity = Math.random();
+                    snowflake.style.fontSize = `${Math.random() * 1.5 + 0.5}em`;
+                    snowflakeContainer.appendChild(snowflake);
+                }
             }
         });
         
@@ -620,7 +650,7 @@
             switchView('cashier');
             updateClock();
             setInterval(updateClock, 1000);
-            startCountdown();
+            listenToConfigChanges();
             listenToOrders();
             listenToMenu();
             listenToDailyReports();
@@ -819,14 +849,18 @@
             const card = document.createElement('div');
             card.className = `order-card flex flex-col justify-between status-${order.status.toLowerCase().replace(' ', '-')}`;
             const itemsHtml = order.items.map(item => `<li class="text-sm text-gray-300">${item}</li>`).join('');
+            const total = calculateTotal(order.items);
 
             card.innerHTML = `
                 <div class="p-4">
                      <h3 class="text-lg font-bold text-white">Mesa ${order.tableNumber}</h3>
                      <p class="text-xs text-gray-400 mb-2">Estado: ${order.status}</p>
-                     <ul class="list-disc list-inside space-y-1">${itemsHtml}</ul>
+                     <ul class="list-disc list-inside space-y-1 pb-4">${itemsHtml}</ul>
                 </div>
                 <div class="mt-auto p-4 pt-0">
+                     <div class="text-right font-bold text-yellow-400 text-lg mb-2">
+                        Total: ₡${total.toLocaleString('es-CR')}
+                    </div>
                     ${order.status === 'Listo' ? `<button data-id="${order.id}" data-order='${JSON.stringify(order)}' class="close-order-btn w-full bg-emerald-600 text-white px-3 py-1.5 rounded-md hover:bg-emerald-700 text-sm font-semibold">Cobrar, Imprimir y Cerrar</button>` : `<div class="text-center text-sm font-medium text-gray-400 pt-2">Pedido en preparación...</div>`}
                 </div>`;
             return card;
@@ -1206,9 +1240,7 @@
         
         let countdownInterval;
         async function startCountdown() {
-            if (countdownInterval) clearInterval(countdownInterval);
             if (!db) return;
-
             const countdownDocRef = doc(db, "config", 'countdown');
             
             try {
@@ -1224,8 +1256,9 @@
                     await setDoc(countdownDocRef, { targetTimestamp });
                 }
                 
+                if (countdownInterval) clearInterval(countdownInterval);
                 countdownInterval = setInterval(() => {
-                    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Costa_Rica' }));
+                    const now = new Date();
                     const distance = targetTimestamp - now.getTime();
                     if (distance < 0) {
                         clearInterval(countdownInterval);
@@ -1241,10 +1274,16 @@
                 countdownTimerEl.textContent = "Error";
             }
         }
+
+        function listenToConfigChanges() {
+            if (!db) return;
+            const countdownDocRef = doc(db, "config", 'countdown');
+            onSnapshot(countdownDocRef, () => startCountdown());
+        }
         
-        async function updateCountdownAdmin(days, operation) {
-            const daysToAdjust = parseInt(days);
-            if (isNaN(daysToAdjust)) {
+        async function updateCountdownAdmin(value, unit, operation) {
+            const amount = parseInt(value);
+            if (isNaN(amount) || amount < 0) {
                 adminFeedback.textContent = "Ingrese un número válido."; return;
             }
             if (!db) {
@@ -1255,24 +1294,30 @@
 
             try {
                  const docSnap = await getDoc(countdownDocRef);
-                 if (!docSnap.exists()) {
-                     await startCountdown(); 
+                 let currentTimestamp;
+                 if (docSnap.exists()) {
+                    currentTimestamp = docSnap.data().targetTimestamp;
+                 } else { 
+                    const defaultDate = new Date();
+                    defaultDate.setFullYear(defaultDate.getFullYear() + 1);
+                    currentTimestamp = defaultDate.getTime();
                  }
                  
-                 const currentTimestamp = (await getDoc(countdownDocRef)).data().targetTimestamp;
                  const currentDate = new Date(currentTimestamp);
+                 const sign = operation === 'add' ? 1 : -1;
 
-                 if (operation === 'add') {
-                    currentDate.setDate(currentDate.getDate() + daysToAdjust);
-                 } else {
-                    currentDate.setDate(currentDate.getDate() - daysToAdjust);
+                 if (unit === 'days') {
+                    currentDate.setDate(currentDate.getDate() + (amount * sign));
+                 } else if (unit === 'hours') {
+                    currentDate.setHours(currentDate.getHours() + (amount * sign));
+                 } else if (unit === 'minutes') {
+                    currentDate.setMinutes(currentDate.getMinutes() + (amount * sign));
                  }
 
                  await setDoc(countdownDocRef, { targetTimestamp: currentDate.getTime() });
 
                  adminFeedback.textContent = "¡Fecha actualizada!";
-                 adminDaysInput.value = '';
-                 startCountdown(); 
+                 document.getElementById(`admin-${unit}-input`).value = '';
                  setTimeout(() => adminFeedback.textContent = '', 3000);
 
             } catch (error) {
@@ -1280,8 +1325,13 @@
                 adminFeedback.textContent = "Error al actualizar.";
             }
         }
-        addDaysBtn.addEventListener('click', () => updateCountdownAdmin(adminDaysInput.value, 'add'));
-        removeDaysBtn.addEventListener('click', () => updateCountdownAdmin(adminDaysInput.value, 'remove'));
+        addDaysBtn.addEventListener('click', () => updateCountdownAdmin(document.getElementById('admin-days-input').value, 'days', 'add'));
+        removeDaysBtn.addEventListener('click', () => updateCountdownAdmin(document.getElementById('admin-days-input').value, 'days', 'remove'));
+        addHoursBtn.addEventListener('click', () => updateCountdownAdmin(document.getElementById('admin-hours-input').value, 'hours', 'add'));
+        removeHoursBtn.addEventListener('click', () => updateCountdownAdmin(document.getElementById('admin-hours-input').value, 'hours', 'remove'));
+        addMinutesBtn.addEventListener('click', () => updateCountdownAdmin(document.getElementById('admin-minutes-input').value, 'minutes', 'add'));
+        removeMinutesBtn.addEventListener('click', () => updateCountdownAdmin(document.getElementById('admin-minutes-input').value, 'minutes', 'remove'));
+
 
         // --- Reports Logic ---
 
