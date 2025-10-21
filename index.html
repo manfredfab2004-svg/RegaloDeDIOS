@@ -5,103 +5,266 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Restaurante Regalo de Dios - Sistema de Pedidos</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600&family=Montserrat:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
-        /* Estilos generales y tema futurista */
+        /* --- TEMA: Noche Tropical Exclusiva --- */
         body {
-            font-family: 'Roboto Mono', monospace;
-            background-image: url('https://rhainaizblawiktjlwsv.supabase.co/storage/v1/object/public/logos/imagen_2025-10-10_160304895.png');
+            font-family: 'Montserrat', sans-serif;
+            background-image: url('https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?q=80&w=3000&auto=format&fit=crop');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            background-color: #1a1a2e;
-            color: #e0e0e0;
+            background-color: #081C15; /* Verde muy oscuro */
+            color: #FDF8E1; /* Blanco cálido */
         }
-        h1, h2, h3 {
-            font-family: 'Orbitron', sans-serif;
-            color: #00bcd4;
+
+        h1, h2, h3, h4 {
+            font-family: 'Lora', serif;
+            color: #FFC300; /* Dorado */
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
         }
+
         .header-bg, .form-panel, .modal-panel {
-            background-color: rgba(30, 30, 46, 0.8);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(0, 188, 212, 0.2);
-            box-shadow: 0 0 20px rgba(0, 188, 212, 0.3);
+            background-color: rgba(8, 28, 21, 0.8); /* Verde oscuro semi-transparente */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 195, 0, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border-radius: 1rem;
         }
-        .container { max-width: 1400px; }
+
+        .container { max-width: 1500px; }
+
         .order-card {
             transition: all 0.3s ease;
             border-radius: 0.75rem;
-            background-color: rgba(40, 40, 60, 0.8);
-            border: 1px solid rgba(0, 188, 212, 0.2);
+            background-color: rgba(27, 67, 50, 0.7); /* Verde medio */
+            border: 1px solid rgba(255, 195, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .order-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
         }
         .order-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 0 15px rgba(0, 188, 212, 0.4);
+            transform: translateY(-5px);
+            box-shadow: 0 0 25px rgba(255, 195, 0, 0.2);
+            border-color: rgba(255, 195, 0, 0.3);
         }
         
-        /* Estilos de estado y botones */
-        .status-en-espera { border-left: 6px solid #ffeb3b; }
-        .status-visto { border-left: 6px solid #00bcd4; }
-        .status-listo { border-left: 6px solid #4caf50; }
-        .status-cerrado { border-left: 6px solid #5a5a5a; }
+        .status-en-espera::before { background-color: #ffeb3b; }
+        .status-visto::before { background-color: #00bcd4; }
+        .status-listo::before { background-color: #4caf50; }
+        .status-cerrado::before { background-color: #5a5a5a; }
 
         .view-button {
-            background-color: rgba(0, 188, 212, 0.1);
-            color: #00bcd4;
+            background-color: rgba(255, 195, 0, 0.1);
+            color: #FFC300;
             transition: all 0.2s ease;
-            border: 1px solid rgba(0, 188, 212, 0.3);
+            border: 1px solid rgba(255, 195, 0, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         .view-button.active {
-            background-color: #D9534F; /* Color festivo */
-            color: white;
-            box-shadow: 0 0 15px rgba(217, 83, 79, 0.6);
+            background-color: #FFC300;
+            color: #081C15;
+            box-shadow: 0 0 15px rgba(255, 195, 0, 0.6);
         }
         .view-button:hover:not(.active) {
-            background-color: rgba(0, 188, 212, 0.2);
+            background-color: rgba(255, 195, 0, 0.2);
         }
 
         .primary-btn {
-            background-color: #D9534F; /* Color festivo */
-            color: white;
+            background: linear-gradient(145deg, #ffc300, #ffae00);
+            color: #1B4332; /* Verde oscuro para texto */
+            font-weight: 600;
             transition: all 0.2s ease;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
         .primary-btn:hover {
-            background-color: #C9302C;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
         }
         .primary-btn:disabled {
-            background-color: #5a5a5a;
+            background: #5a5a5a;
+            color: #aaa;
             cursor: not-allowed;
             opacity: 0.7;
         }
 
-        /* Estilos de inputs y otros elementos */
         .form-panel input, .form-panel select, .form-panel textarea {
-            background-color: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(0, 188, 212, 0.3);
-            color: white;
+            background-color: rgba(8, 28, 21, 0.8);
+            border: 1px solid rgba(255, 195, 0, 0.3);
+            color: #FDF8E1;
         }
-        .golden-text {
-            color: #ffcf40;
-            text-shadow: 0 0 8px #ffcf40;
-        }
-        .login-watermark {
-            color: #e0e0e0;
-            opacity: 0.2;
-        }
-        .status-icon {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 6px;
-        }
-        .status-icon-en-espera { background-color: #ffeb3b; }
-        .status-icon-visto { background-color: #00bcd4; }
-        .status-icon-listo { background-color: #4caf50; }
-        .status-icon-cerrado { background-color: #5a5a5a; }
+        ::placeholder { color: rgba(253, 248, 225, 0.4); }
 
-        /* Estilos para la impresión del tiquete */
+        .golden-text {
+            color: #FFC300;
+            text-shadow: 1px 1px 8px rgba(255, 195, 0, 0.5);
+        }
+
+        .table-btn {
+            background-color: rgba(27, 67, 50, 0.5);
+            color: #FDF8E1;
+            border: 1px solid rgba(255, 195, 0, 0.2);
+            transition: all 0.2s ease;
+        }
+        .table-btn:hover:not(:disabled) {
+            background-color: rgba(27, 67, 50, 1);
+            border-color: rgba(255, 195, 0, 0.4);
+        }
+        .table-btn.selected {
+            background-color: #FFC300;
+            color: #1B4332;
+            border-color: #FFC300;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 195, 0, 0.6);
+        }
+        .table-btn.occupied {
+            background-color: rgba(120, 40, 40, 0.7);
+            color: rgba(253, 248, 225, 0.5);
+            border-color: rgba(217, 83, 79, 0.4);
+            cursor: not-allowed;
+        }
+
+        /* --- Estilos del Calendario Exclusivo --- */
+        #calendarView .form-panel {
+            background-color: rgba(8, 28, 21, 0.95);
+        }
+        #calendar-grid {
+            grid-template-rows: auto repeat(6, 1fr);
+            border-top: 1px solid rgba(255, 195, 0, 0.2);
+            border-left: 1px solid rgba(255, 195, 0, 0.2);
+        }
+        .calendar-day-header {
+            color: #FFC300;
+            opacity: 0.8;
+            font-weight: 600;
+            padding: 0.75rem 0;
+            text-align: center;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(255, 195, 0, 0.2);
+            border-right: 1px solid rgba(255, 195, 0, 0.2);
+        }
+        .calendar-day {
+            min-height: 8rem;
+            border-right: 1px solid rgba(255, 195, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 195, 0, 0.2);
+            transition: all 0.2s ease-in-out;
+            background-color: rgba(27, 67, 50, 0.4);
+            display: flex;
+            flex-direction: column;
+            padding: 0.5rem;
+            position: relative;
+            cursor: pointer;
+        }
+        .calendar-day:hover:not(.other-month) {
+            background-color: rgba(27, 67, 50, 0.8);
+            transform: scale(1.02);
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .calendar-day-number {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #FDF8E1;
+        }
+        .calendar-day.today {
+            border: 2px solid #FFC300;
+            background-color: rgba(255, 195, 0, 0.1);
+        }
+        .calendar-day.other-month {
+            background-color: transparent;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .event-details {
+            font-size: 0.75rem;
+            background-color: rgba(255, 195, 0, 0.8);
+            color: #1B4332;
+            font-weight: 600;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: auto;
+        }
+        
+        /* --- Estilos de la Calculadora Exclusiva --- */
+        #calculatorView .form-panel {
+            background-color: rgba(8, 28, 21, 0.9);
+        }
+
+        #calc-display {
+            background-color: rgba(8, 28, 21, 1);
+            border: 1px solid rgba(255, 195, 0, 0.3);
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+            font-family: 'Orbitron', sans-serif;
+            color: #FDF8E1;
+            padding: 1.5rem 1rem;
+            font-size: 2.5rem;
+        }
+
+        .calc-btn {
+            border-radius: 9999px;
+            aspect-ratio: 1 / 1;
+            font-weight: bold;
+            transition: all 0.1s ease-in;
+            border: 1px solid transparent;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .calc-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 195, 0, 0.3);
+        }
+
+        .calc-btn.number {
+            background-color: rgba(27, 67, 50, 0.7);
+            color: #FDF8E1;
+            border-color: rgba(255, 195, 0, 0.2);
+        }
+        .calc-btn.number:hover {
+            background-color: rgba(27, 67, 50, 1);
+        }
+
+        .calc-btn.operator {
+            background-color: rgba(255, 195, 0, 0.2);
+            color: #FFC300;
+        }
+        .calc-btn.operator:hover {
+            background-color: rgba(255, 195, 0, 0.4);
+        }
+
+        .calc-btn.special {
+            background-color: rgba(217, 83, 79, 0.3);
+            color: #D9534F;
+        }
+        .calc-btn.special:hover {
+            background-color: rgba(217, 83, 79, 0.5);
+        }
+        
+        .calc-btn.equal {
+            background: linear-gradient(145deg, #ffc300, #ffae00);
+            color: #1B4332;
+        }
+
+
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
@@ -112,59 +275,6 @@
             #print-area h1 { font-size: 12pt; text-align: center; }
             #print-area p { margin: 2px 0; }
             #print-area ul { list-style-type: none; padding: 5px 0; margin: 5px 0; border-top: 1px dashed #000; border-bottom: 1px dashed #000; }
-        }
-         /* Estilos para las mesas */
-        .table-btn {
-            background-color: rgba(0, 188, 212, 0.2);
-            color: #00bcd4;
-            border: 1px solid rgba(0, 188, 212, 0.4);
-            padding: 1rem;
-            border-radius: 0.5rem;
-            font-weight: bold;
-            transition: all 0.2s ease;
-        }
-        .table-btn:hover:not(:disabled) {
-            background-color: rgba(0, 188, 212, 0.4);
-        }
-        .table-btn.selected {
-            background-color: #00bcd4;
-            color: white;
-            box-shadow: 0 0 15px rgba(0, 188, 212, 0.6);
-            transform: scale(1.05);
-        }
-        .table-btn.occupied {
-            background-color: rgba(255, 82, 82, 0.4);
-            color: #ff5252;
-            border-color: rgba(255, 82, 82, 0.6);
-            cursor: not-allowed;
-        }
-        
-        /* Animación de nieve */
-        #snowflake-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            pointer-events: none;
-        }
-
-        .snowflake {
-            color: #fff;
-            font-size: 1em;
-            font-family: Arial, sans-serif;
-            text-shadow: 0 0 5px #000;
-            position: absolute;
-            top: -10%;
-            z-index: 1;
-            animation: fall linear infinite;
-        }
-
-        @keyframes fall {
-            to {
-                transform: translateY(105vh);
-            }
         }
     </style>
 </head>
@@ -179,8 +289,7 @@
     <!-- Pantalla de Contraseña -->
     <div id="password-modal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
         <div id="password-box" class="modal-panel p-8 rounded-lg text-center w-full max-w-sm relative overflow-hidden">
-            <div id="snowflake-container"></div>
-            <div class="relative z-10">
+             <div class="relative z-10">
                 <img src="https://rhainaizblawiktjlwsv.supabase.co/storage/v1/object/public/logos/imagen_2025-10-10_160555537.png" alt="Logo Regalo de Dios" class="mx-auto h-24 w-24 object-contain rounded-full shadow-md mb-6">
                 <h2 class="text-2xl font-bold mb-4 text-white">Ingresar Contraseña</h2>
                 <form id="password-form">
@@ -412,27 +521,30 @@
         
         <!-- Vista Calculadora -->
         <div id="calculatorView" class="hidden">
-             <div class="form-panel p-8 rounded-lg max-w-sm mx-auto">
-                <h2 class="text-3xl font-bold mb-6 text-center text-cyan-400">Calculadora</h2>
-                <div id="calc-display" class="bg-gray-800 text-white text-4xl text-right p-4 rounded-md mb-4 overflow-x-auto">0</div>
-                <div class="grid grid-cols-4 gap-2">
-                    <button class="calc-btn bg-cyan-700 hover:bg-cyan-600 text-2xl p-4 rounded-md">C</button>
-                    <button class="calc-btn bg-gray-700 hover:bg-gray-600 text-2xl p-4 rounded-md">/</button>
-                    <button class="calc-btn bg-gray-700 hover:bg-gray-600 text-2xl p-4 rounded-md">*</button>
-                    <button class="calc-btn bg-gray-700 hover:bg-gray-600 text-2xl p-4 rounded-md">-</button>
-                    <button class="calc-btn bg-gray-600 hover:bg-gray-500 text-2xl p-4 rounded-md">7</button>
-                    <button class="calc-btn bg-gray-600 hover:bg-gray-500 text-2xl p-4 rounded-md">8</button>
-                    <button class="calc-btn bg-gray-600 hover:bg-gray-500 text-2xl p-4 rounded-md">9</button>
-                    <button class="calc-btn bg-gray-700 hover:bg-gray-600 text-2xl p-4 rounded-md row-span-2">+</button>
-                    <button class="calc-btn bg-gray-600 hover:bg-gray-500 text-2xl p-4 rounded-md">4</button>
-                    <button class="calc-btn bg-gray-600 hover:bg-gray-500 text-2xl p-4 rounded-md">5</button>
-                    <button class="calc-btn bg-gray-600 hover:bg-gray-500 text-2xl p-4 rounded-md">6</button>
-                    <button class="calc-btn bg-gray-600 hover:bg-gray-500 text-2xl p-4 rounded-md">1</button>
-                    <button class="calc-btn bg-gray-600 hover:bg-gray-500 text-2xl p-4 rounded-md">2</button>
-                    <button class="calc-btn bg-gray-600 hover:bg-gray-500 text-2xl p-4 rounded-md">3</button>
-                    <button class="calc-btn bg-cyan-600 hover:bg-cyan-500 text-2xl p-4 rounded-md row-span-2">=</button>
-                    <button class="calc-btn bg-gray-600 hover:bg-gray-500 text-2xl p-4 rounded-md col-span-2">0</button>
-                    <button class="calc-btn bg-gray-600 hover:bg-gray-500 text-2xl p-4 rounded-md">.</button>
+             <div class="form-panel p-8 rounded-lg max-w-sm mx-auto relative overflow-hidden">
+                 <img src="https://rhainaizblawiktjlwsv.supabase.co/storage/v1/object/public/logos/imagen_2025-10-10_160555537.png" class="absolute inset-0 w-full h-full object-contain opacity-10 pointer-events-none" alt="Watermark Logo">
+                 <div class="relative z-10">
+                    <h2 class="text-3xl font-bold mb-6 text-center text-cyan-400">Calculadora</h2>
+                    <div id="calc-display" class="bg-gray-800 text-white text-4xl text-right p-4 rounded-md mb-4 overflow-x-auto">0</div>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button class="calc-btn special">C</button>
+                        <button class="calc-btn operator">/</button>
+                        <button class="calc-btn operator">*</button>
+                        <button class="calc-btn operator">-</button>
+                        <button class="calc-btn number">7</button>
+                        <button class="calc-btn number">8</button>
+                        <button class="calc-btn number">9</button>
+                        <button class="calc-btn operator row-span-2">+</button>
+                        <button class="calc-btn number">4</button>
+                        <button class="calc-btn number">5</button>
+                        <button class="calc-btn number">6</button>
+                        <button class="calc-btn number">1</button>
+                        <button class="calc-btn number">2</button>
+                        <button class="calc-btn number">3</button>
+                        <button class="calc-btn equal row-span-2">=</button>
+                        <button class="calc-btn number col-span-2">0</button>
+                        <button class="calc-btn number">.</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -445,7 +557,7 @@
                     <h2 id="calendar-header" class="text-3xl font-bold text-center text-cyan-400"></h2>
                     <button id="next-month-btn" class="primary-btn px-4 py-2 rounded-md">&gt;</button>
                 </div>
-                <div id="calendar-grid" class="grid grid-cols-7 gap-1"></div>
+                <div id="calendar-grid" class="grid grid-cols-7"></div>
             </div>
         </div>
     </div>
@@ -840,7 +952,7 @@
                 </div>
                 <div class="flex space-x-2 p-4 pt-0">
                     ${order.status === 'En espera' ? `<button data-id="${order.id}" data-status="Visto" class="update-status-btn flex-1 bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded-md text-sm font-semibold">Marcar Visto</button>` : ''}
-                    ${order.status === 'Visto' ? `<button data-id="${order.id}" data-status="Listo" class="update-status-btn flex-1 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold">Marcar Listo</button>` : ''}
+                    ${order.status === 'Visto' ? `<button data-id="${order.id}" data-status="Listo" class="update-status-btn flex-1 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-md font-semibold">Marcar Listo</button>` : ''}
                 </div>`;
             return card;
         }
@@ -1239,24 +1351,22 @@
         }
         
         let countdownInterval;
-        async function startCountdown() {
+        function listenToConfigChanges() {
             if (!db) return;
             const countdownDocRef = doc(db, "config", 'countdown');
-            
-            try {
-                const docSnap = await getDoc(countdownDocRef);
+            onSnapshot(countdownDocRef, async (docSnap) => {
                 let targetTimestamp;
-
                 if (docSnap.exists()) {
                     targetTimestamp = docSnap.data().targetTimestamp;
                 } else {
                     const defaultDate = new Date();
                     defaultDate.setFullYear(defaultDate.getFullYear() + 1);
                     targetTimestamp = defaultDate.getTime();
-                    await setDoc(countdownDocRef, { targetTimestamp });
+                    await setDoc(doc(db, "config", "countdown"), { targetTimestamp });
                 }
-                
+
                 if (countdownInterval) clearInterval(countdownInterval);
+                
                 countdownInterval = setInterval(() => {
                     const now = new Date();
                     const distance = targetTimestamp - now.getTime();
@@ -1268,17 +1378,7 @@
                     const d = Math.floor(distance / 86400000), h = Math.floor((distance % 86400000) / 3600000), m = Math.floor((distance % 3600000) / 60000), s = Math.floor((distance % 60000) / 1000);
                     countdownTimerEl.innerHTML = `${d}d ${h}h ${m}m ${s}s`;
                 }, 1000);
-
-            } catch(error) {
-                console.error("Error al cargar temporizador:", error);
-                countdownTimerEl.textContent = "Error";
-            }
-        }
-
-        function listenToConfigChanges() {
-            if (!db) return;
-            const countdownDocRef = doc(db, "config", 'countdown');
-            onSnapshot(countdownDocRef, () => startCountdown());
+            });
         }
         
         async function updateCountdownAdmin(value, unit, operation) {
@@ -1303,18 +1403,18 @@
                     currentTimestamp = defaultDate.getTime();
                  }
                  
-                 const currentDate = new Date(currentTimestamp);
                  const sign = operation === 'add' ? 1 : -1;
+                 let newTimestamp = currentTimestamp;
 
                  if (unit === 'days') {
-                    currentDate.setDate(currentDate.getDate() + (amount * sign));
+                    newTimestamp += amount * sign * 24 * 60 * 60 * 1000;
                  } else if (unit === 'hours') {
-                    currentDate.setHours(currentDate.getHours() + (amount * sign));
+                    newTimestamp += amount * sign * 60 * 60 * 1000;
                  } else if (unit === 'minutes') {
-                    currentDate.setMinutes(currentDate.getMinutes() + (amount * sign));
+                    newTimestamp += amount * sign * 60 * 1000;
                  }
 
-                 await setDoc(countdownDocRef, { targetTimestamp: currentDate.getTime() });
+                 await setDoc(countdownDocRef, { targetTimestamp: newTimestamp });
 
                  adminFeedback.textContent = "¡Fecha actualizada!";
                  document.getElementById(`admin-${unit}-input`).value = '';
@@ -1508,32 +1608,47 @@
                 const daysOfWeek = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
                 daysOfWeek.forEach(day => {
                     const dayEl = document.createElement('div');
-                    dayEl.className = 'text-center font-bold text-cyan-400';
+                    dayEl.className = 'calendar-day-header';
                     dayEl.textContent = day;
                     calendarGrid.appendChild(dayEl);
                 });
 
-                const firstDay = new Date(year, month, 1).getDay();
+                const firstDayOfMonth = new Date(year, month, 1).getDay();
                 const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const today = new Date();
 
-                for (let i = 0; i < firstDay; i++) {
-                    calendarGrid.appendChild(document.createElement('div'));
+                for (let i = 0; i < firstDayOfMonth; i++) {
+                    const emptyCell = document.createElement('div');
+                    emptyCell.className = 'calendar-day other-month';
+                    calendarGrid.appendChild(emptyCell);
                 }
 
                 for (let day = 1; day <= daysInMonth; day++) {
-                    const dayEl = document.createElement('div');
+                    const dayCell = document.createElement('div');
                     const dateId = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    dayEl.className = 'text-center p-2 border border-gray-700 rounded-md cursor-pointer hover:bg-cyan-800 transition-colors';
-                    dayEl.textContent = day;
-                    dayEl.dataset.date = dateId;
+                    dayCell.className = 'calendar-day';
+                    dayCell.dataset.date = dateId;
 
-                    if (events[dateId]) {
-                        const eventIndicator = document.createElement('div');
-                        eventIndicator.className = 'w-2 h-2 bg-yellow-400 rounded-full mx-auto mt-1';
-                        dayEl.appendChild(eventIndicator);
+                    if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+                        dayCell.classList.add('today');
                     }
                     
-                    calendarGrid.appendChild(dayEl);
+                    const dayNumber = document.createElement('div');
+                    dayNumber.className = 'calendar-day-number';
+                    dayNumber.textContent = day;
+                    dayCell.appendChild(dayNumber);
+                    
+                    const eventsContainer = document.createElement('div');
+                    dayCell.appendChild(eventsContainer);
+
+                    if (events[dateId]) {
+                        const eventDiv = document.createElement('div');
+                        eventDiv.className = 'event-details';
+                        eventDiv.textContent = events[dateId].text;
+                        eventsContainer.appendChild(eventDiv);
+                    }
+                    
+                    calendarGrid.appendChild(dayCell);
                 }
             }
             
