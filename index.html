@@ -340,6 +340,52 @@
         </div>
     </div>
     
+    <!-- Panel de Administrador de Menú -->
+    <div id="menu-admin-panel" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="modal-panel p-8 rounded-lg w-full max-w-lg">
+            <h2 class="text-2xl font-bold mb-6 text-white text-center">Administrar Menú</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Columna para Añadir -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 text-cyan-400">Añadir Platillo</h3>
+                    <form id="add-menu-item-form" class="space-y-4">
+                        <div>
+                            <label for="menu-item-name" class="block text-sm font-medium text-blue-200">Nombre</label>
+                            <input type="text" id="menu-item-name" class="w-full p-2 rounded-md bg-gray-700 text-white" required>
+                        </div>
+                        <div>
+                            <label for="menu-item-price" class="block text-sm font-medium text-blue-200">Precio (₡)</label>
+                            <input type="number" id="menu-item-price" class="w-full p-2 rounded-md bg-gray-700 text-white" required>
+                        </div>
+                        <div>
+                            <label for="menu-item-category" class="block text-sm font-medium text-blue-200">Categoría</label>
+                            <select id="menu-item-category" class="w-full p-2 rounded-md bg-gray-700 text-white" required>
+                                <option value="Desayunos">Desayunos</option>
+                                <option value="Antojitos">Antojitos</option>
+                                <option value="Combos">Combos</option>
+                                <option value="Casados">Casados</option>
+                                <option value="Platos Fuertes">Platos Fuertes</option>
+                                <option value="Hamburguesas">Hamburguesas</option>
+                                <option value="Gallos">Gallos</option>
+                                <option value="Menú Niños">Menú Niños</option>
+                                <option value="Bebidas">Bebidas</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full primary-btn py-2 rounded-md font-semibold">Añadir Platillo</button>
+                    </form>
+                </div>
+                <!-- Columna para Ver/Eliminar -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 text-cyan-400">Menú Actual</h3>
+                    <div id="current-menu-list" class="h-64 overflow-y-auto space-y-2 p-2 bg-gray-900 rounded-md">
+                        <!-- Lista se genera con JS -->
+                    </div>
+                </div>
+            </div>
+            <button id="menu-admin-logout-btn" class="w-full bg-gray-700 text-cyan-400 hover:bg-gray-600 py-2 mt-8 rounded-md font-semibold border border-cyan-400">Volver</button>
+        </div>
+    </div>
+
     <!-- Modal de Confirmación Genérico -->
     <div id="confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
         <div class="modal-panel p-8 rounded-lg shadow-2xl text-center w-full max-w-sm">
@@ -400,6 +446,21 @@
                 <div class="flex justify-center space-x-4 mt-6">
                     <button type="submit" class="flex-1 primary-btn py-2 rounded-md font-semibold">Guardar</button>
                     <button id="cancel-event-btn" type="button" class="flex-1 bg-gray-600 hover:bg-gray-700 py-2 rounded-md font-semibold">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal de Edición de Pedido -->
+    <div id="edit-order-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="modal-panel p-8 rounded-lg shadow-2xl w-full max-w-sm">
+            <h2 id="edit-order-modal-title" class="text-3xl font-bold mb-6 text-center text-cyan-400">Editar Pedido</h2>
+            <form id="edit-order-form">
+                <input type="hidden" id="edit-order-id">
+                <textarea id="edit-order-items" class="w-full p-3 text-white bg-gray-700 rounded-md" rows="8" required></textarea>
+                <div class="flex justify-center space-x-4 mt-6">
+                    <button type="submit" class="flex-1 primary-btn py-2 rounded-md font-semibold">Guardar Cambios</button>
+                    <button id="cancel-edit-order-btn" type="button" class="flex-1 bg-gray-600 hover:bg-gray-700 py-2 rounded-md font-semibold">Cancelar</button>
                 </div>
             </form>
         </div>
@@ -616,6 +677,14 @@
         const removeMinutesBtn = document.getElementById('remove-minutes-btn');
         const adminLogoutBtn = document.getElementById('admin-logout-btn');
         const adminFeedback = document.getElementById('admin-feedback');
+        
+        const menuAdminPanel = document.getElementById('menu-admin-panel');
+        const addMenuItemForm = document.getElementById('add-menu-item-form');
+        const menuItemName = document.getElementById('menu-item-name');
+        const menuItemPrice = document.getElementById('menu-item-price');
+        const menuItemCategory = document.getElementById('menu-item-category');
+        const currentMenuList = document.getElementById('current-menu-list');
+        const menuAdminLogoutBtn = document.getElementById('menu-admin-logout-btn');
 
         const confirmModal = document.getElementById('confirm-modal');
         const confirmTitle = document.getElementById('confirm-title');
@@ -659,6 +728,13 @@
         const eventTextInput = document.getElementById('event-text');
         const cancelEventBtn = document.getElementById('cancel-event-btn');
 
+        const editOrderModal = document.getElementById('edit-order-modal');
+        const editOrderModalTitle = document.getElementById('edit-order-modal-title');
+        const editOrderForm = document.getElementById('edit-order-form');
+        const editOrderIdInput = document.getElementById('edit-order-id');
+        const editOrderItemsTextarea = document.getElementById('edit-order-items');
+        const cancelEditOrderBtn = document.getElementById('cancel-edit-order-btn');
+
 
         let db, auth;
         let previousOrders = []; 
@@ -695,13 +771,17 @@
         passwordForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const password = passwordInput.value;
-            if (password === '5555') {
+            if (password === '9999') {
                 passwordModal.classList.add('hidden');
                 mainContainer.classList.remove('hidden');
                 initializeFirebase();
             } else if (password === '8873') {
                 passwordModal.classList.add('hidden');
                 adminPanel.classList.remove('hidden');
+                 if (!db) initializeFirebase();
+            } else if (password === '0000') { 
+                passwordModal.classList.add('hidden');
+                menuAdminPanel.classList.remove('hidden');
                  if (!db) initializeFirebase();
             }
             else {
@@ -720,6 +800,11 @@
             adminPanel.classList.add('hidden');
             passwordModal.classList.remove('hidden');
         });
+        
+        menuAdminLogoutBtn.addEventListener('click', () => {
+            menuAdminPanel.classList.add('hidden');
+            passwordModal.classList.remove('hidden');
+        });
 
         async function initializeFirebase() {
             if (db) return; 
@@ -733,7 +818,7 @@
                     if (user) {
                         authStatusEl.textContent = `Conectado a tu Firebase`;
                         authStatusEl.style.color = '#4ade80';
-                        if (!mainContainer.classList.contains('hidden') || !adminPanel.classList.contains('hidden')) {
+                        if (!mainContainer.classList.contains('hidden') || !adminPanel.classList.contains('hidden') || !menuAdminPanel.classList.contains('hidden')) {
                            await seedMenuData();
                            initializeApplication();
                         }
@@ -769,6 +854,39 @@
             initializeCalculator();
             initializeCalendar();
             requestNotificationPermission();
+            
+            addMenuItemForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = menuItemName.value;
+                const price = parseInt(menuItemPrice.value);
+                const category = menuItemCategory.value;
+                if (name && price > 0 && category) {
+                    try {
+                        await addDoc(collection(db, 'menu'), { name, price, category });
+                        menuItemName.value = '';
+                        menuItemPrice.value = '';
+                        menuItemCategory.value = 'Desayunos'; // Reset to default
+                    } catch (error) {
+                        console.error("Error adding item:", error);
+                        alert("Error al añadir platillo.");
+                    }
+                }
+            });
+
+            currentMenuList.addEventListener('click', async (e) => {
+                const deleteBtn = e.target.closest('.delete-menu-item-btn');
+                if (deleteBtn) {
+                    const id = deleteBtn.dataset.id;
+                    showConfirm("Eliminar Platillo", "¿Estás seguro que quieres eliminar este platillo?", async () => {
+                        try {
+                            await deleteDoc(doc(db, 'menu', id));
+                        } catch (error) {
+                            console.error("Error deleting item: ", error);
+                            alert("Error al eliminar platillo.");
+                        }
+                    });
+                }
+            });
         }
 
         function initializeTableSelection() {
@@ -965,7 +1083,15 @@
 
             card.innerHTML = `
                 <div class="p-4">
-                     <h3 class="text-lg font-bold text-white">Mesa ${order.tableNumber}</h3>
+                     <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-white">Mesa ${order.tableNumber}</h3>
+                        <button data-id="${order.id}" data-order='${JSON.stringify(order)}' class="edit-order-btn text-cyan-300 hover:text-white p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                              <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                     </div>
                      <p class="text-xs text-gray-400 mb-2">Estado: ${order.status}</p>
                      <ul class="list-disc list-inside space-y-1 pb-4">${itemsHtml}</ul>
                 </div>
@@ -1000,24 +1126,42 @@
             const target = e.target;
             const collectionPath = "orders";
             
-            if (target.classList.contains('update-status-btn')) {
-                const { id, status } = target.dataset;
+            const updateBtn = target.closest('.update-status-btn');
+            if (updateBtn) {
+                const { id, status } = updateBtn.dataset;
                 await updateDoc(doc(db, collectionPath, id), { status });
+                return;
             }
-            if (target.classList.contains('close-order-btn')) {
-                const orderData = JSON.parse(target.dataset.order);
+
+            const closeBtn = target.closest('.close-order-btn');
+            if (closeBtn) {
+                const orderData = JSON.parse(closeBtn.dataset.order);
                 showPaymentModal(orderData);
+                return;
             }
-            if (target.classList.contains('reprint-btn')) {
-                const { order } = target.dataset;
+            
+            const reprintBtn = target.closest('.reprint-btn');
+            if (reprintBtn) {
+                const { order } = reprintBtn.dataset;
                 const orderData = JSON.parse(order);
                 printTicket(orderData.tableNumber, orderData.items, orderData.total);
+                return;
             }
-            if (target.classList.contains('delete-order-btn')) {
-                const { id } = target.dataset;
+            
+            const deleteBtn = target.closest('.delete-order-btn');
+            if (deleteBtn) {
+                const { id } = deleteBtn.dataset;
                 showConfirm("Borrar Pedido", "¿Estás seguro?", async () => {
                    await deleteDoc(doc(db, collectionPath, id));
                 });
+                return;
+            }
+
+            const editBtn = target.closest('.edit-order-btn');
+            if (editBtn) {
+                const orderData = JSON.parse(editBtn.dataset.order);
+                showEditOrderModal(orderData);
+                return;
             }
         };
         
@@ -1074,6 +1218,7 @@
                 const sortedCategories = Object.keys(groupedMenu).sort();
                 
                 renderMenuForCashier(groupedMenu, sortedCategories);
+                renderMenuForAdmin(groupedMenu, sortedCategories); 
             }, (error) => {
                 console.error("Error listening to menu:", error);
             });
@@ -1132,6 +1277,39 @@
                     orderItemsTextarea.focus();
                 });
                 menuItemsContainer.appendChild(button);
+            });
+        }
+        
+        function renderMenuForAdmin(groupedMenu, categories) {
+            currentMenuList.innerHTML = '';
+            if (categories.length === 0) {
+                currentMenuList.innerHTML = '<p class="text-gray-400 text-sm p-4">No hay platillos en el menú.</p>';
+                return;
+            }
+
+            categories.forEach(category => {
+                const categoryTitle = document.createElement('h4');
+                categoryTitle.className = 'text-lg font-semibold text-cyan-400 sticky top-0 bg-gray-900 px-2 py-1';
+                categoryTitle.textContent = category;
+                currentMenuList.appendChild(categoryTitle);
+
+                const itemsList = document.createElement('ul');
+                itemsList.className = 'mb-4';
+                
+                groupedMenu[category].forEach(item => {
+                    const itemEl = document.createElement('li');
+                    itemEl.className = 'flex justify-between items-center text-sm text-gray-300 p-2 hover:bg-gray-800 rounded-md';
+                    itemEl.innerHTML = `
+                        <span>${item.name} - ₡${item.price}</span>
+                        <button type="button" data-id="${item.id}" class="delete-menu-item-btn text-red-500 hover:text-red-400 p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="pointer-events: none;">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    `;
+                    itemsList.appendChild(itemEl);
+                });
+                currentMenuList.appendChild(itemsList);
             });
         }
         
@@ -1194,6 +1372,38 @@
             
             paymentModal.classList.add('hidden');
             currentOrderForPayment = null;
+        });
+        
+        // --- Edit Order Modal ---
+        function showEditOrderModal(order) {
+            editOrderIdInput.value = order.id;
+            editOrderModalTitle.textContent = `Editar Pedido - Mesa ${order.tableNumber}`;
+            editOrderItemsTextarea.value = order.items.join('\n');
+            editOrderModal.classList.remove('hidden');
+        }
+        
+        cancelEditOrderBtn.addEventListener('click', () => {
+            editOrderModal.classList.add('hidden');
+        });
+
+        editOrderForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const orderId = editOrderIdInput.value;
+            const updatedItems = editOrderItemsTextarea.value.trim().split('\n').filter(Boolean);
+
+            if (updatedItems.length > 0) {
+                try {
+                    await updateDoc(doc(db, "orders", orderId), {
+                        items: updatedItems
+                    });
+                    editOrderModal.classList.add('hidden');
+                } catch (error) {
+                    console.error("Error updating order:", error);
+                    alert("No se pudo actualizar el pedido.");
+                }
+            } else {
+                alert("El pedido no puede estar vacío.");
+            }
         });
 
 
@@ -1378,6 +1588,9 @@
                     const d = Math.floor(distance / 86400000), h = Math.floor((distance % 86400000) / 3600000), m = Math.floor((distance % 3600000) / 60000), s = Math.floor((distance % 60000) / 1000);
                     countdownTimerEl.innerHTML = `${d}d ${h}h ${m}m ${s}s`;
                 }, 1000);
+            }, (error) => {
+                 console.error("Error listening to config changes:", error);
+                 countdownTimerEl.textContent = "Error";
             });
         }
         
@@ -1531,18 +1744,20 @@
         
         async function seedMenuData() {
             if (!db) return;
+            const menuConfigDoc = doc(db, 'config', 'menu_seeded');
             try {
-                const menuCollection = collection(db, 'menu');
-                const snapshot = await getDocs(query(menuCollection, limit(1)));
+                const docSnap = await getDoc(menuConfigDoc);
 
-                if (snapshot.empty) {
+                if (!docSnap.exists()) {
                     console.log("Menu collection is empty. Seeding data...");
+                    const menuCollection = collection(db, 'menu');
                     const menuData = [
-                        { name: 'Típicos', price: 3500, category: 'Desayunos' },{ name: 'Desayuno Campesino', price: 3500, category: 'Desayunos' },{ name: 'Desayuno Delux', price: 4000, category: 'Desayunos' },{ name: 'Omelette (jamón, queso y espinaca)', price: 3200, category: 'Desayunos' },{ name: 'Tostadas Francesas', price: 3000, category: 'Desayunos' },{ name: 'Pancakes', price: 3000, category: 'Desayunos' },{ name: 'Fajitas (Pollo/Res)', price: 4000, category: 'Antojitos' },{ name: 'Quesadilla (Pollo/Carne)', price: 3700, category: 'Antojitos' },{ name: 'Quesadilla de Camarón', price: 4300, category: 'Antojitos' },{ name: 'Taco Tico de Carne', price: 3000, category: 'Antojitos' },{ name: 'Taco de la Casa (Mixto)', price: 5000, category: 'Antojitos' },{ name: 'Nachos (Carne/Pollo)', price: 3500, category: 'Antojitos' },{ name: 'Nachos Mixtos', price: 5000, category: 'Antojitos' },{ name: 'Papas Supremas (Pollo/Carne)', price: 3500, category: 'Antojitos' },{ name: 'Pollo Frito', price: 2500, category: 'Antojitos' },{ name: 'Bigorón', price: 3000, category: 'Antojitos' },{ name: 'Surtidas', price: 13500, category: 'Antojitos' },{ name: 'Sándwich de Carne', price: 3000, category: 'Antojitos' },{ name: 'Taco Grande con Papas', price: 3000, category: 'Antojitos' },{ name: 'Taco Pequeño con Papas', price: 2000, category: 'Antojitos' },{ name: 'Aliñadas', price: 3000, category: 'Antojitos' },{ name: 'Chorreadas', price: 4500, category: 'Antojitos' },{ name: 'Empanada Sencilla', price: 2000, category: 'Antojitos' },{ name: 'Empanada Arreglada', price: 2600, category: 'Antojitos' },{ name: 'Aros de Cebolla', price: 2000, category: 'Antojitos' },{ name: 'Chifrijo', price: 5000, category: 'Antojitos' },{ name: 'Nuggets de Pollo', price: 3500, category: 'Antojitos' },{ name: 'Dados de Pescado', price: 3500, category: 'Antojitos' },{ name: 'Patacones Arreglados', price: 3500, category: 'Antojitos' },{ name: 'Papas del Campo', price: 2000, category: 'Antojitos' },{ name: 'Papas Fritas', price: 1500, category: 'Antojitos' },{ name: 'Chicharrones', price: 4500, category: 'Antojitos' },{ name: 'Costilla a la BBQ', price: 7000, category: 'Antojitos' },{ name: 'Alitas de Pollo (6 pz)', price: 4500, category: 'Antojitos' },{ name: 'Alitas de Pollo (12 pz)', price: 8100, category: 'Antojitos' },{ name: 'Surtida Lux', price: 15000, category: 'Antojitos' },{ name: 'Parrillada Mixta', price: 9000, category: 'Antojitos' },{ name: 'Choripán', price: 5300, category: 'Antojitos' },{ name: 'Combo 1 (Hamb. Peq, Taco Peq, Papas)', price: 5000, category: 'Combos' },{ name: 'Combo 2 (Hot Dog, Taco, Papas)', price: 5000, category: 'Combos' },{ name: 'Casado Pechuga Pollo', price: 4000, category: 'Casados' },{ name: 'Casado Pescado', price: 4000, category: 'Casados' },{ name: 'Casado Chuleta', price: 4000, category: 'Casados' },{ name: 'Casado Carne en Salsa', price: 4000, category: 'Casados' },{ name: 'Casado Bistec', price: 4000, category: 'Casados' },{ name: 'Casado Pollo en Salsa', price: 4000, category: 'Casados' },{ name: 'Pechuga Pollo Parmesana', price: 5000, category: 'Platos Fuertes' },{ name: 'Pechuga Pollo a la Plancha', price: 5000, category: 'Platos Fuertes' },{ name: 'Arroz de la Casa', price: 5000, category: 'Platos Fuertes' },{ name: 'Arroz con Camarones', price: 5000, category: 'Platos Fuertes' },{ name: 'Churrasco', price: 7000, category: 'Platos Fuertes' },{ name: 'Costilla de Cerdo BBQ', price: 7000, category: 'Platos Fuertes' },{ name: 'Filete de Pescado', price: 5000, category: 'Platos Fuertes' },{ name: 'Pasta Alfredo', price: 5000, category: 'Platos Fuertes' },{ name: 'Pasta Boloñesa', price: 5000, category: 'Platos Fuertes' },{ name: 'Spaghetti con Camarones', price: 5000, category: 'Platos Fuertes' },{ name: 'Hamb. Pollo Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Pollo Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Hamb. Torta de Carne Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Torta de Carne Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Hamb. Carne Desmechada Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Carne Desmechada Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Gallo de Papa', price: 1500, category: 'Gallos' },{ name: 'Gallo de Pollo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Carne', price: 1500, category: 'Gallos' },{ name: 'Gallo de Salchichón', price: 1500, category: 'Gallos' },{ name: 'Gallo de Torta de Huevo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Carne en Salsa', price: 1500, category: 'Gallos' },{ name: 'Gallo de Chorizo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Pescado', price: 1500, category: 'Gallos' },{ name: 'Nuggets (Niños)', price: 3000, category: 'Menú Niños' },{ name: 'Mini Hamburguesa', price: 2000, category: 'Menú Niños' },{ name: 'Mini Quesadilla', price: 2000, category: 'Menú Niños' },{ name: 'Mini Sándwich', price: 2500, category: 'Menú Niños' },{ name: 'Batido en Agua', price: 1500, category: 'Bebidas' },{ name: 'Batido en Leche', price: 2000, category: 'Bebidas' },{ name: 'Pepsi 600 ml', price: 1000, category: 'Bebidas' },{ name: 'Tropical', price: 1000, category: 'Bebidas' },{ name: 'Pepsi 2.5 L', price: 1700, category: 'Bebidas' },{ name: 'Tropical 2.5 L', price: 1700, category: 'Bebidas' },{ name: 'Capuchino', price: 2500, category: 'Bebidas' },{ name: 'Café', price: 1000, category: 'Bebidas' },{ name: 'Café con Leche', price: 1500, category: 'Bebidas' },{ name: 'Chocolate', price: 1500, category: 'Bebidas' },{ name: 'Agua Dulce', price: 1000, category: 'Bebidas' },{ name: 'Leche', price: 1200, category: 'Bebidas' }
+                        { name: 'Típicos', price: 3500, category: 'Desayunos' },{ name: 'Desayuno Campesino', price: 3500, category: 'Desayunos' },{ name: 'Desayuno Delux', price: 4000, category: 'Desayunos' },{ name: 'Omelette (jamón, queso y espinaca)', price: 3200, category: 'Desayunos' },{ name: 'Tostadas Francesas', price: 3000, category: 'Desayunos' },{ name: 'Pancakes', price: 3000, category: 'Desayunos' },{ name: 'Fajitas (Pollo/Res)', price: 4000, category: 'Antojitos' },{ name: 'Quesadilla (Pollo/Carne)', price: 3700, category: 'Antojitos' },{ name: 'Quesadilla de Camarón', price: 4300, category: 'Antojitos' },{ name: 'Taco Tico de Carne', price: 3000, category: 'Antojitos' },{ name: 'Taco de la Casa (Mixto)', price: 5000, category: 'Antojitos' },{ name: 'Nachos (Carne/Pollo)', price: 3500, category: 'Antojitos' },{ name: 'Nachos Mixtos', price: 5000, category: 'Antojitos' },{ name: 'Papas Supremas (Pollo/Carne)', price: 3500, category: 'Antojitos' },{ name: 'Pollo Frito', price: 2500, category: 'Antojitos' },{ name: 'Bigorón', price: 3000, category: 'Antojitos' },{ name: 'Surtidas', price: 13500, category: 'Antojitos' },{ name: 'Sándwich de Carne', price: 3000, category: 'Antojitos' },{ name: 'Taco Grande con Papas', price: 3000, category: 'Antojitos' },{ name: 'Taco Pequeño con Papas', price: 2000, category: 'Antojitos' },{ name: 'Aliñadas', price: 3000, category: 'Antojitos' },{ name: 'Chorreadas', price: 4500, category: 'Antojitos' },{ name: 'Empanada Sencilla', price: 2000, category: 'Antojitos' },{ name: 'Empanada Arreglada', price: 2600, category: 'Antojitos' },{ name: 'Aros de Cebolla', price: 2000, category: 'Antojitos' },{ name: 'Chifrijo', price: 5000, category: 'Antojitos' },{ name: 'Nuggets de Pollo', price: 3500, category: 'Antojitos' },{ name: 'Dados de Pescado', price: 3500, category: 'Antojitos' },{ name: 'Patacones Arreglados', price: 3500, category: 'Antojitos' },{ name: 'Papas del Campo', price: 2000, category: 'Antojitos' },{ name: 'Papas Fritas', price: 1500, category: 'Antojitos' },{ name: 'Chicharrones', price: 4500, category: 'Antojitos' },{ name: 'Costilla a la BBQ', price: 7000, category: 'Antojitos' },{ name: 'Alitas de Pollo (6 pz)', price: 4500, category: 'Antojitos' },{ name: 'Alitas de Pollo (12 pz)', price: 8100, category: 'Antojitos' },{ name: 'Surtida Lux', price: 15000, category: 'Antojitos' },{ name: 'Parrillada Mixta', price: 9000, category: 'Antojitos' },{ name: 'Choripán', price: 5300, category: 'Antojitos' },{ name: 'Combo 1 (Hamb. Peq, Taco Peq, Papas)', price: 5000, category: 'Combos' },{ name: 'Combo 2 (Hot Dog, Taco, Papas)', price: 5000, category: 'Combos' },{ name: 'Casado Pechuga Pollo', price: 4000, category: 'Casados' },{ name: 'Casado Pescado', price: 4000, category: 'Casados' },{ name: 'Casado Chuleta', price: 4000, category: 'Casados' },{ name: 'Casado Carne en Salsa', price: 4000, category: 'Casados' },{ name: 'Casado Bistec', price: 4000, category: 'Casados' },{ name: 'Casado Pollo en Salsa', price: 4000, category: 'Casados' },{ name:D.P, price: 5000, category: 'Platos Fuertes' },{ name: 'Pechuga Pollo a la Plancha', price: 5000, category: 'Platos Fuertes' },{ name: 'Arroz de la Casa', price: 5000, category: 'Platos Fuertes' },{ name: 'Arroz con Camarones', price: 5000, category: 'Platos Fuertes' },{ name: 'Churrasco', price: 7000, category: 'Platos Fuertes' },{ name: 'Costilla de Cerdo BBQ', price: 7000, category: 'Platos Fuertes' },{ name: 'Filete de Pescado', price: 5000, category: 'Platos Fuertes' },{ name: 'Pasta Alfredo', price: 5000, category: 'Platos Fuertes' },{ name: 'Pasta Boloñesa', price: 5000, category: 'Platos Fuertes' },{ name: 'Spaghetti con Camarones', price: 5000, category: 'Platos Fuertes' },{ name: 'Hamb. Pollo Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Pollo Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Hamb. Torta de Carne Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Torta de Carne Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Hamb. Carne Desmechada Pequeña', price: 2500, category: 'Hamburguesas' },{ name: 'Hamb. Carne Desmechada Grande', price: 5000, category: 'Hamburguesas' },{ name: 'Gallo de Papa', price: 1500, category: 'Gallos' },{ name: 'Gallo de Pollo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Carne', price: 1500, category: 'Gallos' },{ name: 'Gallo de Salchichón', price: 1500, category: 'Gallos' },{ name: 'Gallo de Torta de Huevo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Carne en Salsa', price: 1500, category: 'Gallos' },{ name: 'Gallo de Chorizo', price: 1500, category: 'Gallos' },{ name: 'Gallo de Pescado', price: 1500, category: 'Gallos' },{ name: 'Nuggets (Niños)', price: 3000, category: 'Menú Niños' },{ name: 'Mini Hamburguesa', price: 2000, category: 'Menú Niños' },{ name: 'Mini Quesadilla', price: 2000, category: 'Menú Niños' },{ name: 'Mini Sándwich', price: 2500, category: 'Menú Niños' },{ name: 'Batido en Agua', price: 1500, category: 'Bebidas' },{ name: 'Batido en Leche', price: 2000, category: 'Bebidas' },{ name: 'Pepsi 600 ml', price: 1000, category: 'Bebidas' },{ name: 'Tropical', price: 1000, category: 'Bebidas' },{ name: 'Pepsi 2.5 L', price: 1700, category: 'Bebidas' },{ name: 'Tropical 2.5 L', price: 1700, category: 'Bebidas' },{ name: 'Capuchino', price: 2500, category: 'Bebidas' },{ name: 'Café', price: 1000, category: 'Bebidas' },{ name: 'Café con Leche', price: 1500, category: 'Bebidas' },{ name: 'Chocolate', price: 1500, category: 'Bebidas' },{ name: 'Agua Dulce', price: 1000, category: 'Bebidas' },{ name: 'Leche', price: 1200, category: 'Bebidas' }
                     ];
                     
                     const addPromises = menuData.map(item => addDoc(menuCollection, item));
                     await Promise.all(addPromises);
+                    await setDoc(menuConfigDoc, { seeded: true });
                     console.log("Menu data seeded successfully.");
                 }
             } catch (error) {
